@@ -68,6 +68,14 @@ const AuthLogin = () => {
           <Verify 
             onSuccess={() => setIsVerified(true)}
             onRefresh={() => setIsVerified(false)}
+            onCustomverify={(data) => {
+              // Increased tolerance slightly to 5px for better UX while remaining strict
+              const isStrict = Math.abs(data.left - data.destX) < 5;
+              return {
+                spliced: isStrict,
+                verified: data.verified
+              };
+            }}
           />
         </div>
 
