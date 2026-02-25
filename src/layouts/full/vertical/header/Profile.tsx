@@ -13,8 +13,11 @@ import {
   DropdownMenuTrigger,
 } from 'src/components/ui/dropdown-menu';
 import { Button } from 'src/components/ui/button';
+import { useAuth } from 'src/context/auth-context';
 
 const Profile = () => {
+  const { logout } = useAuth();
+
   return (
     <div className="relative group/menu ps-1 sm:ps-15 shrink-0">
       <DropdownMenu>
@@ -58,11 +61,11 @@ const Profile = () => {
 
           <div className="pt-2 px-4">
             <Button
-              asChild
               variant="outline"
               className="w-full rounded-md"
+              onClick={logout}
             >
-              <Link to="/auth/auth2/login">Logout</Link>
+              Logout
             </Button>
           </div>
         </DropdownMenuContent>

@@ -75,6 +75,13 @@ const SidebarContent: MenuItem[] = [
     children: [
       {
         id: uniqueId(),
+        name: 'Products',
+        icon: 'solar:bag-5-linear',
+        url: '/apps/products',
+        isPro: false,
+      },
+      {
+        id: uniqueId(),
         name: 'Notes',
         icon: 'solar:notes-linear',
         url: '/apps/notes',

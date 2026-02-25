@@ -1,12 +1,41 @@
+import React, { useState } from 'react';
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
-
+import { useAuth } from 'src/context/auth-context';
 
 const AuthRegister = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (password !== passwordConfirmation) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await register(name, email, password, passwordConfirmation);
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
-      <form className="mt-6">
+      <form className="mt-6" onSubmit={handleSubmit}>
+        {error && <div className="text-red-500 mb-4 text-sm font-medium">{error}</div>}
         <div className="mb-4">
           <div className="mb-2 block">
             <Label htmlFor="name" className="font-semibold" >Name</Label>
@@ -14,6 +43,9 @@ const AuthRegister = () => {
           <Input
             id="name"
             type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
           />
         </div>
         <div className="mb-4">
@@ -22,19 +54,39 @@ const AuthRegister = () => {
           </div>
           <Input
             id="emadd"
-            type="text"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="mb-2 block">
             <Label htmlFor="userpwd" className="font-semibold">Password</Label>
           </div>
           <Input
             id="userpwd"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
-        <Button className="w-full">Sign Up</Button>
+        <div className="mb-6">
+          <div className="mb-2 block">
+            <Label htmlFor="confirmpwd" className="font-semibold">Confirm Password</Label>
+          </div>
+          <Input
+            id="confirmpwd"
+            type="password"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            required
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? 'Signing Up...' : 'Sign Up'}
+        </Button>
       </form>
     </>
   )
