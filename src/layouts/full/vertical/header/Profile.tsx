@@ -16,7 +16,7 @@ import { Button } from 'src/components/ui/button';
 import { useAuth } from 'src/context/auth-context';
 
 const Profile = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   return (
     <div className="relative group/menu ps-1 sm:ps-15 shrink-0">
@@ -29,9 +29,19 @@ const Profile = () => {
 
         <DropdownMenuContent
           align="end"
-          className="w-screen sm:w-[200px] pb-6 pt-4 rounded-sm"
+          className="w-screen sm:w-[250px] pb-6 pt-4 rounded-sm"
         >
-          <SimpleBar>
+          <div className="px-4 pb-4 pt-2">
+            <div className="flex items-center gap-3">
+              <img src={profileimg} alt="user" width={45} height={45} className="rounded-full" />
+              <div className="overflow-hidden">
+                <h5 className="text-sm font-semibold truncate">{user?.name || 'Admin'}</h5>
+                <p className="text-xs text-muted-foreground truncate">{user?.email || 'admin@info.com'}</p>
+              </div>
+            </div>
+          </div>
+          <DropdownMenuSeparator className='mb-2' />
+          <SimpleBar className="max-h-[300px]">
             {profileData.profileDD.map((items, index) => (
               <DropdownMenuItem
                 key={index}
