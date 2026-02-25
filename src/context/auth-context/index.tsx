@@ -29,11 +29,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'access_token' && !event.newValue) {
+        // Token was removed in another tab
+        setToken(null);
+        setUser(null);
+        toast.info('Session ended in another tab.');
+        navigate('/auth/login');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
     if (token) {
       // Here you could fetch the user info if needed
       // setUser(fetchUser());
     }
     setIsLoading(false);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [token]);
 
   const login = async (email: string, password: string, captcha_token: string) => {
