@@ -25,6 +25,7 @@ const UserProfile = Loadable(lazy(() => import('../views/pages/user-profile/User
 /* ****Apps***** */
 const Products = Loadable(lazy(() => import('../views/apps/products/ProductList')));
 const Contact = Loadable(lazy(() => import('../views/apps/contact/ContactList')));
+const LogoClient = Loadable(lazy(() => import('../views/apps/logo-client/LogoClientList')));
 const Notes = Loadable(lazy(() => import('../views/apps/notes/Notes')));
 const Form = Loadable(lazy(() => import('../views/utilities/form/Form')));
 const Table = Loadable(lazy(() => import('../views/utilities/table/Table')));
@@ -54,6 +55,7 @@ const Router = [
           { index: true, element: <Modern /> },
           { path: '/apps/products', element: <Products /> },
           { path: '/apps/contact', element: <Contact /> },
+          { path: '/apps/logo-clients', element: <LogoClient /> },
           { path: '/apps/notes', element: <Notes /> },
           { path: '/utilities/form', element: <Form /> },
           { path: '/utilities/table', element: <Table /> },

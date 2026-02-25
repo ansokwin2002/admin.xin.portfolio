@@ -56,6 +56,13 @@ const SidebarContent: MenuItem[] = [
       },
       {
         id: uniqueId(),
+        name: 'Logo Client',
+        icon: 'solar:album-linear',
+        url: '/apps/logo-clients',
+        isPro: false,
+      },
+      {
+        id: uniqueId(),
         name: 'Products',
         icon: 'solar:bag-5-linear',
         url: '/apps/products',

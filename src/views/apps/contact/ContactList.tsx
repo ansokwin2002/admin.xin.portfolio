@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ import BreadcrumbComp from 'src/layouts/full/shared/breadcrumb/BreadcrumbComp';
 import CardBox from 'src/components/shared/CardBox';
 import { Icon } from '@iconify/react';
 import { toast } from 'sonner';
+import { useAuth } from 'src/context/auth-context';
 
 const BCrumb = [
   {
@@ -37,51 +38,60 @@ interface ContactMessage {
   id: number;
   name: string;
   email: string;
-  mobile: string;
+  phone: string; 
   budget: string;
-  details: string;
+  message: string;
 }
 
 const ContactList = () => {
-  const [messages, setMessages] = useState<ContactMessage[]>([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      mobile: '+1 234 567 890',
-      budget: '$5,000 - $10,000',
-      details: 'Looking for a new portfolio website with modern animations.',
-    },
-    {
-      id: 2,
-      name: 'Alice Smith',
-      email: 'alice@design.com',
-      mobile: '+44 7700 900077',
-      budget: '$10,000+',
-      details: 'E-commerce platform integration with Stripe and custom dashboard.',
-    },
-    {
-      id: 3,
-      name: 'Robert Brown',
-      email: 'robert@tech.io',
-      mobile: '+61 412 345 678',
-      budget: '$2,000 - $5,000',
-      details: 'Simple landing page for a startup launch.',
-    },
-  ]);
+  const { token } = useAuth();
+  const API_URL = import.meta.env.VITE_API_URL;
 
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<ContactMessage | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const fetchContacts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/contacts`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        console.log('API Response:', data);
+        // Handle both direct array and { data: [] } formats
+        const contactData = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : []);
+        setMessages(contactData);
+      } else {
+        toast.error('Failed to fetch contacts');
+      }
+    } catch (error) {
+      toast.error('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchContacts();
+  }, [token]);
+
   const filteredMessages = messages.filter(
     (msg) =>
-      msg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      msg.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      msg.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -89,10 +99,32 @@ const ContactList = () => {
   const currentItems = filteredMessages.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this message?')) {
-      setMessages(messages.filter((msg) => msg.id !== id));
-      toast.success('Message deleted successfully');
+  const confirmDelete = (id: number) => {
+    setMessageToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (messageToDelete === null) return;
+
+    try {
+      const response = await fetch(`${API_URL}/contacts/${messageToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setMessages(messages.filter((msg) => msg.id !== messageToDelete));
+        toast.success('Message deleted successfully');
+        setIsDeleteDialogOpen(false);
+      } else {
+        toast.error('Failed to delete message');
+      }
+    } catch (error) {
+      toast.error('Network error');
     }
   };
 
@@ -101,11 +133,29 @@ const ContactList = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdate = () => {
-    if (currentMessage) {
-      setMessages(messages.map((m) => (m.id === currentMessage.id ? currentMessage : m)));
-      setIsEditDialogOpen(false);
-      toast.success('Message updated successfully');
+  const handleUpdate = async () => {
+    if (!currentMessage) return;
+
+    try {
+      const response = await fetch(`${API_URL}/contacts/${currentMessage.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(currentMessage),
+      });
+
+      if (response.ok) {
+        setMessages(messages.map((m) => (m.id === currentMessage.id ? currentMessage : m)));
+        setIsEditDialogOpen(false);
+        toast.success('Message updated successfully');
+      } else {
+        toast.error('Failed to update message');
+      }
+    } catch (error) {
+      toast.error('Network error');
     }
   };
 
@@ -142,7 +192,13 @@ const ContactList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentItems.length > 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10">
+                    Loading messages...
+                  </TableCell>
+                </TableRow>
+              ) : currentItems.length > 0 ? (
                 currentItems.map((msg) => (
                   <TableRow key={msg.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell>
@@ -151,15 +207,15 @@ const ContactList = () => {
                         <span className="text-xs text-muted-foreground">{msg.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{msg.mobile}</TableCell>
+                    <TableCell className="text-sm">{msg.phone}</TableCell>
                     <TableCell>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-lightprimary text-primary">
                         {msg.budget}
                       </span>
                     </TableCell>
                     <TableCell className="max-w-[300px]">
-                      <p className="text-sm text-muted-foreground truncate" title={msg.details}>
-                        {msg.details}
+                      <p className="text-sm text-muted-foreground truncate" title={msg.message}>
+                        {msg.message}
                       </p>
                     </TableCell>
                     <TableCell className="text-right">
@@ -175,7 +231,7 @@ const ContactList = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(msg.id)}
+                          onClick={() => confirmDelete(msg.id)}
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Icon icon="solar:trash-bin-trash-linear" width={18} />
@@ -258,9 +314,9 @@ const ContactList = () => {
                   <Label htmlFor="edit-mobile">Mobile</Label>
                   <Input
                     id="edit-mobile"
-                    value={currentMessage.mobile}
+                    value={currentMessage.phone}
                     onChange={(e) =>
-                      setCurrentMessage({ ...currentMessage, mobile: e.target.value })
+                      setCurrentMessage({ ...currentMessage, phone: e.target.value })
                     }
                   />
                 </div>
@@ -280,9 +336,9 @@ const ContactList = () => {
                 <Textarea
                   id="edit-details"
                   rows={4}
-                  value={currentMessage.details}
+                  value={currentMessage.message}
                   onChange={(e) =>
-                    setCurrentMessage({ ...currentMessage, details: e.target.value })
+                    setCurrentMessage({ ...currentMessage, message: e.target.value })
                   }
                 />
               </div>
@@ -293,6 +349,31 @@ const ContactList = () => {
               Cancel
             </Button>
             <Button onClick={handleUpdate}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Icon icon="solar:danger-triangle-linear" width={24} />
+              Confirm Deletion
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete this contact message? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              No, Keep it
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Yes, Delete it
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
