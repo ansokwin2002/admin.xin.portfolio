@@ -5,19 +5,16 @@
 
 
 
-import Logo from "src/assets/images/logos/dark-logo.svg";
-import Logowhite from "src/assets/images/logos/light-logo.svg";
+import { Link } from "react-router-dom";
 
 
 const FullLogo = () => {
   return (
-
-
     <>
       {/* Dark Logo   */}
-      <img src={Logo} alt="logo" className="block dark:hidden rtl:scale-x-[-1]" />
+      <img src="/assets/images/Qiyou logo.png" alt="logo" className="block dark:hidden rtl:scale-x-[-1] h-10 w-auto" />
       {/* Light Logo  */}
-      <img src={Logowhite} alt="logo" className="hidden dark:block rtl:scale-x-[-1]" />
+      <img src="/assets/images/Qiyou logo.png" alt="logo" className="hidden dark:block rtl:scale-x-[-1] h-10 w-auto" />
     </>
   );
 };

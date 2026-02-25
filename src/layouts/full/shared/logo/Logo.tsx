@@ -1,11 +1,10 @@
 
 import { Link } from 'react-router'
-import LogoIcon from 'src/assets/images/logos/logo-icon.svg'
 
 const Logo = () => {
     return (
         <Link to={'/'}>
-            <img src={LogoIcon} alt="logo" />
+            <img src="/assets/images/Qiyou logo.png" alt="logo" className="h-10 w-auto" />
         </Link>
     )
 }
