@@ -30,12 +30,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'access_token' && !event.newValue) {
-        // Token was removed in another tab
-        setToken(null);
-        setUser(null);
-        toast.info('Session ended in another tab.');
-        navigate('/auth/login');
+      if (event.key === 'access_token') {
+        if (!event.newValue) {
+          // Token was removed (Logout)
+          setToken(null);
+          setUser(null);
+          toast.info('Session ended in another tab.');
+          navigate('/auth/login');
+        } else {
+          // Token was added (Login)
+          setToken(event.newValue);
+          toast.success('You have logged in from another tab.');
+          navigate('/');
+        }
       }
     };
 
