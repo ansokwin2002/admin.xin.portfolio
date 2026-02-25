@@ -3,12 +3,15 @@ import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { useAuth } from 'src/context/auth-context';
+import { Verify } from 'react-puzzle-captcha';
+import 'react-puzzle-captcha/dist/react-puzzle-captcha.css';
 
 const AuthRegister = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
@@ -16,6 +19,11 @@ const AuthRegister = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!isVerified) {
+      setError('Please complete the puzzle');
+      return;
+    }
     
     if (password !== passwordConfirmation) {
       setError('Passwords do not match');
@@ -24,7 +32,7 @@ const AuthRegister = () => {
 
     setIsSubmitting(true);
     try {
-      await register(name, email, password, passwordConfirmation);
+      await register(name, email, password, passwordConfirmation, 'puzzle_verified');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -34,7 +42,7 @@ const AuthRegister = () => {
 
   return (
     <>
-      <form className="mt-6" onSubmit={handleSubmit}>
+      <form className="mt-4" onSubmit={handleSubmit}>
         {error && <div className="text-red-500 mb-4 text-sm font-medium">{error}</div>}
         <div className="mb-4">
           <div className="mb-2 block">
@@ -72,7 +80,7 @@ const AuthRegister = () => {
             required
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="mb-2 block">
             <Label htmlFor="confirmpwd" className="font-semibold">Confirm Password</Label>
           </div>
@@ -84,7 +92,15 @@ const AuthRegister = () => {
             required
           />
         </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+
+        <div className="mb-4">
+          <Verify 
+            onSuccess={() => setIsVerified(true)}
+            onRefresh={() => setIsVerified(false)}
+          />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isSubmitting || !isVerified}>
           {isSubmitting ? 'Signing Up...' : 'Sign Up'}
         </Button>
       </form>

@@ -8,7 +8,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   if (isLoading) return <div>Loading...</div>;
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth/auth2/login" />;
+    return <Navigate to="/auth/login" />;
   }
 
   return <>{children}</>;

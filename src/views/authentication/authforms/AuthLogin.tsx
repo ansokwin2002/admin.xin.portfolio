@@ -5,10 +5,13 @@ import { Checkbox } from 'src/components/ui/checkbox';
 import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
 import { useAuth } from 'src/context/auth-context';
+import { Verify } from 'react-puzzle-captcha';
+import 'react-puzzle-captcha/dist/react-puzzle-captcha.css';
 
 const AuthLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
@@ -16,9 +19,15 @@ const AuthLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!isVerified) {
+      setError('Please complete the puzzle');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, 'puzzle_verified');
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
     } finally {
@@ -28,7 +37,7 @@ const AuthLogin = () => {
 
   return (
     <>
-      <form className="mt-6" onSubmit={handleSubmit}>
+      <form className="mt-4" onSubmit={handleSubmit}>
         {error && <div className="text-red-500 mb-4 text-sm font-medium">{error}</div>}
         <div className="mb-4">
           <div className="mb-2 block">
@@ -54,6 +63,14 @@ const AuthLogin = () => {
             required
           />
         </div>
+        
+        <div className="mb-4">
+          <Verify 
+            onSuccess={() => setIsVerified(true)}
+            onRefresh={() => setIsVerified(false)}
+          />
+        </div>
+
         <div className="flex justify-between my-5">
           <div className="flex items-center gap-2">
             <Checkbox id="accept" className="checkbox" />
@@ -65,7 +82,7 @@ const AuthLogin = () => {
             Forgot Password ?
           </Link>
         </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="w-full" disabled={isSubmitting || !isVerified}>
           {isSubmitting ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>

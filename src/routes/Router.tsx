@@ -72,8 +72,8 @@ const Router = [
           </GuestGuard>
         ),
         children: [
-          { path: 'auth2/login', element: <Login2 /> },
-          { path: 'auth2/register', element: <Register2 /> },
+          { path: 'login', element: <Login2 /> },
+          { path: 'register', element: <Register2 /> },
           { path: 'maintenance', element: <Maintainance /> },
           { path: '404', element: <Error /> },
           { path: '*', element: <Navigate to="/auth/404" /> },

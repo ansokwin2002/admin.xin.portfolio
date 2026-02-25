@@ -12,8 +12,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, password_confirmation: string) => Promise<void>;
+  login: (email: string, password: string, captcha_token: string) => Promise<void>;
+  register: (name: string, email: string, password: string, password_confirmation: string, captcha_token: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -36,12 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, captcha_token: string) => {
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captcha_token }),
       });
 
       const data = await response.json();
@@ -64,12 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string, password_confirmation: string) => {
+  const register = async (name: string, email: string, password: string, password_confirmation: string, captcha_token: string) => {
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, password_confirmation }),
+        body: JSON.stringify({ name, email, password, password_confirmation, captcha_token }),
       });
 
       const data = await response.json();
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('access_token');
     toast.info('You have been logged out.');
-    navigate('/auth/auth2/login');
+    navigate('/auth/login');
   };
 
   return (
