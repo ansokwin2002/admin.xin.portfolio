@@ -3,7 +3,7 @@ import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { useAuth } from 'src/context/auth-context';
-import { Verify } from 'react-puzzle-captcha';
+import { Verify, VerifySuccessData } from 'react-puzzle-captcha';
 import 'react-puzzle-captcha/dist/react-puzzle-captcha.css';
 
 const AuthRegister = () => {
@@ -97,7 +97,7 @@ const AuthRegister = () => {
           <Verify 
             onSuccess={() => setIsVerified(true)}
             onRefresh={() => setIsVerified(false)}
-            onCustomverify={(data) => {
+            onCustomverify={(data: VerifySuccessData) => {
               // Increased tolerance slightly to 5px for better UX while remaining strict
               const isStrict = Math.abs(data.left - data.destX) < 5;
               return {

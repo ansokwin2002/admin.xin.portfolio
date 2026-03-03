@@ -5,8 +5,6 @@
 
 
 
-import { Link } from "react-router-dom";
-
 
 const FullLogo = ({ className }: { className?: string }) => {
   const logoClass = className || "h-10 w-auto";
