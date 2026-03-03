@@ -69,7 +69,7 @@ const CreateTicketForm = () => {
 
     addTicket(newTicket);
     resetForm();
-    navigate('/apps/tickets');
+    navigate('/admin/apps/tickets');
   };
 
   const resetForm = () => {
@@ -162,7 +162,7 @@ const CreateTicketForm = () => {
             </Button>
             <Button
               className="rounded-md bg-red-500 text-white hover:bg-red-600"
-              onClick={() => navigate('/apps/tickets')}
+              onClick={() => navigate('/admin/apps/tickets')}
             >
               Cancel
             </Button>

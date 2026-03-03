@@ -8,49 +8,49 @@ interface appsLinkType {
 
 const appsLink: appsLinkType[] = [
   {
-    href: '/apps/chats',
+    href: '/admin/apps/chats',
     title: 'Chat Application',
     subtext: 'New messages arrived',
     avatar: 'src/assets/images/svgs/icon-dd-chat.svg',
   },
   {
-    href: '/apps/ecommerce/shop',
+    href: '/admin/apps/ecommerce/shop',
     title: 'eCommerce App',
     subtext: 'New stock available',
     avatar: 'src/assets/images/svgs/icon-dd-cart.svg',
   },
   {
-    href: '/apps/notes',
+    href: '/admin/apps/notes',
     title: 'Notes App',
     subtext: 'To-do and Daily tasks',
     avatar: 'src/assets/images/svgs/icon-dd-invoice.svg',
   },
   {
-    href: '/apps/calendar',
+    href: '/admin/apps/calendar',
     title: 'Calendar App',
     subtext: 'Get dates',
     avatar: 'src/assets/images/svgs/icon-dd-date.svg',
   },
   {
-    href: '/apps/contacts',
+    href: '/admin/apps/contacts',
     title: 'Contact Application',
     subtext: '2 Unsaved Contacts',
     avatar: 'src/assets/images/svgs/icon-dd-mobile.svg',
   },
   {
-    href: '/apps/tickets',
+    href: '/admin/apps/tickets',
     title: 'Tickets App',
     subtext: 'Submit tickets',
     avatar: 'src/assets/images/svgs/icon-dd-lifebuoy.svg',
   },
   {
-    href: '/apps/email',
+    href: '/admin/apps/email',
     title: 'Email App',
     subtext: 'Get new emails',
     avatar: 'src/assets/images/svgs/icon-dd-message-box.svg',
   },
   {
-    href: '/apps/blog/post',
+    href: '/admin/apps/blog/post',
     title: 'Blog App',
     subtext: 'added new blog',
     avatar: 'src/assets/images/svgs/icon-dd-application.svg',
@@ -64,15 +64,15 @@ interface LinkType {
 
 const pageLinks: LinkType[] = [
   {
-    href: '/theme-pages/pricing',
+    href: '/admin/theme-pages/pricing',
     title: 'Pricing Page',
   },
   {
-    href: '/auth/auth1/login',
+    href: '/admin/auth/auth1/login',
     title: 'Authentication Design',
   },
   {
-    href: '/auth/auth1/register',
+    href: '/admin/auth/auth1/register',
     title: 'Register Now',
   },
   {
@@ -80,19 +80,19 @@ const pageLinks: LinkType[] = [
     title: '404 Error Page',
   },
   {
-    href: '/apps/kanban',
+    href: '/admin/apps/kanban',
     title: 'Kanban App',
   },
   {
-    href: '/apps/user-profile/profile',
+    href: '/admin/apps/user-profile/profile',
     title: 'User Application',
   },
   {
-    href: '/apps/blog/post',
+    href: '/admin/apps/blog/post',
     title: 'Blog Design',
   },
   {
-    href: '/apps/ecommerce/checkout',
+    href: '/admin/apps/ecommerce/checkout',
     title: 'Shopping Cart',
   },
 ];
@@ -106,27 +106,27 @@ interface SearchType {
 const SearchLinks: SearchType[] = [
   {
     title: 'Analytics',
-    href: '/dashboards/analytics',
+    href: '/admin/dashboards/analytics',
   },
   {
     title: 'eCommerce',
-    href: '/dashboards/eCommerce',
+    href: '/admin/dashboards/eCommerce',
   },
   {
     title: 'CRM',
-    href: '/dashboards/crm',
+    href: '/admin/dashboards/crm',
   },
   {
     title: 'Contacts',
-    href: '/dashboards/eCommerce',
+    href: '/admin/dashboards/eCommerce',
   },
   {
     title: 'Posts',
-    href: '/dashboards/posts',
+    href: '/admin/dashboards/posts',
   },
   {
     title: 'Details',
-    href: '/dashboards/details',
+    href: '/admin/dashboards/details',
   },
 ];
 
@@ -251,21 +251,21 @@ const profileDD: ProfileType[] = [
     title: 'My Profile',
     subtitle: 'Account settings',
     icon: "tabler:user",
-    url: '/user-profile',
+    url: '/admin/user-profile',
   },
   {
     img: inboxIcon,
     title: 'My Notes',
     subtitle: 'My Daily Notes',
     icon: "tabler:mail",
-    url: '/apps/Notes',
+    url: '/admin/apps/notes',
   },
   {
     img: taskIcon,
     title: 'My Blogs',
     subtitle: 'Stories, insights, and updates',
     icon: "tabler:list-check",
-    url: '/apps/blog/post',
+    url: '/admin/apps/blog/post',
   },
 ];
 

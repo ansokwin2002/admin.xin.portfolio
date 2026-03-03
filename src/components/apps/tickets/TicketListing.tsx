@@ -82,7 +82,7 @@ const TicketListing = () => {
       {/* Top bar */}
       <div className="flex justify-between items-center mb-4 gap-4">
         <Button
-          onClick={() => navigate('/apps/tickets/create')}
+          onClick={() => navigate('/admin/apps/tickets/create')}
           className="rounded-md whitespace-nowrap"
         >
           Create Ticket

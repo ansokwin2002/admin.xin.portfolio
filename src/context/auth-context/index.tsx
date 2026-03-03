@@ -36,12 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(null);
           setUser(null);
           toast.info('Session ended in another tab.');
-          navigate('/auth/login');
+          navigate('/admin/auth/login');
         } else {
           // Token was added (Login)
           setToken(event.newValue);
           toast.success('You have logged in from another tab.');
-          navigate('/');
+          navigate('/admin');
         }
       }
     };
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(data.access_token);
         localStorage.setItem('access_token', data.access_token);
         toast.success('Login successful! Welcome back.');
-        navigate('/');
+        navigate('/admin');
       } else {
         const errorMsg = data.message || 'Login failed';
         toast.error(errorMsg);
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(data.access_token);
         localStorage.setItem('access_token', data.access_token);
         toast.success('Registration successful! Account created.');
-        navigate('/');
+        navigate('/admin');
       } else {
         const errorMsg = data.message || 'Registration failed';
         toast.error(errorMsg);
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('access_token');
     toast.info('You have been logged out.');
-    navigate('/auth/login');
+    navigate('/admin/auth/login');
   };
 
   return (

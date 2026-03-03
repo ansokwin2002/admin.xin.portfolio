@@ -23,7 +23,7 @@ const TopCards = () => {
       img: iconConnect,
       bgcolor: "bg-info/10 dark:bg-info/10",
       textclr: "text-info dark:text-info",
-      url: "/apps/notes"
+      url: "/admin/apps/notes"
     },
     {
       key: "card2",
@@ -32,7 +32,7 @@ const TopCards = () => {
       img: iconSpeechBubble,
       bgcolor: "bg-success/10 dark:bg-success/10",
       textclr: "text-success dark:text-success",
-      url: "/icons/iconify"
+      url: "/admin/icons/iconify"
     },
     {
       key: "card3",
@@ -41,7 +41,7 @@ const TopCards = () => {
       img: iconFavorites,
       bgcolor: "bg-error/10 dark:bg-error/10",
       textclr: "text-error dark:text-error",
-      url: "/apps/blog/post"
+      url: "/admin/apps/blog/post"
     },
     {
       key: "card4",
@@ -50,7 +50,7 @@ const TopCards = () => {
       img: iconMailbox,
       bgcolor: "bg-secondary/10 dark:bg-secondary/10",
       textclr: "text-primary dark:text-primary",
-      url: "/apps/tickets"
+      url: "/admin/apps/tickets"
     },
     {
       key: "card5",
@@ -69,7 +69,7 @@ const TopCards = () => {
       img: iconUser,
       bgcolor: "bg-primary/10 dark:bg-lightprimary",
       textclr: "text-primary dark:text-primary",
-      url: "/utilities/table"
+      url: "/admin/utilities/table"
     },
     {
       key: "card8",
@@ -78,7 +78,7 @@ const TopCards = () => {
       img: iconFavorites,
       bgcolor: "bg-lighterror dark:bg-lighterror",
       textclr: "text-error dark:text-error",
-      url: "/apps/blog/post"
+      url: "/admin/apps/blog/post"
     },
   ]
 

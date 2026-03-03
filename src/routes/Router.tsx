@@ -46,6 +46,10 @@ const Router = [
     children: [
       {
         path: '/',
+        element: <Navigate to="/admin" />,
+      },
+      {
+        path: '/admin',
         element: (
           <AuthGuard>
             <FullLayout />
@@ -53,23 +57,23 @@ const Router = [
         ),
         children: [
           { index: true, element: <Modern /> },
-          { path: '/apps/products', element: <Products /> },
-          { path: '/apps/contact', element: <Contact /> },
-          { path: '/apps/logo-clients', element: <LogoClient /> },
-          { path: '/apps/notes', element: <Notes /> },
-          { path: '/utilities/form', element: <Form /> },
-          { path: '/utilities/table', element: <Table /> },
-          { path: '/apps/tickets', element: <Tickets /> },
-          { path: '/apps/tickets/create', element: <CreateTickets /> },
-          { path: '/apps/blog/post', element: <Blog /> },
-          { path: '/apps/blog/detail/:id', element: <BlogDetail /> },
-          { path: '/user-profile', element: <UserProfile /> },
-          { path: '/icons/iconify', element: <SolarIcon /> },
-          { path: '*', element: <Navigate to="/auth/404" /> },
+          { path: 'apps/products', element: <Products /> },
+          { path: 'apps/contact', element: <Contact /> },
+          { path: 'apps/logo-clients', element: <LogoClient /> },
+          { path: 'apps/notes', element: <Notes /> },
+          { path: 'utilities/form', element: <Form /> },
+          { path: 'utilities/table', element: <Table /> },
+          { path: 'apps/tickets', element: <Tickets /> },
+          { path: 'apps/tickets/create', element: <CreateTickets /> },
+          { path: 'apps/blog/post', element: <Blog /> },
+          { path: 'apps/blog/detail/:id', element: <BlogDetail /> },
+          { path: 'user-profile', element: <UserProfile /> },
+          { path: 'icons/iconify', element: <SolarIcon /> },
+          { path: '*', element: <Navigate to="/admin/auth/404" /> },
         ],
       },
       {
-        path: '/auth',
+        path: '/admin/auth',
         element: (
           <GuestGuard>
             <BlankLayout />
@@ -80,12 +84,12 @@ const Router = [
           { path: 'register', element: <Register2 /> },
           { path: 'maintenance', element: <Maintainance /> },
           { path: '404', element: <Error /> },
-          { path: '*', element: <Navigate to="/auth/404" /> },
+          { path: '*', element: <Navigate to="/admin/auth/404" /> },
         ],
       },
       {
         path: '*',
-        element: <Navigate to="/auth/404" />
+        element: <Navigate to="/admin/auth/404" />
       }
     ],
   },

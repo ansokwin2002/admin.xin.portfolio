@@ -68,7 +68,9 @@ const renderSidebarItems = (
       ? `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground !hover:bg-transparent ${
           isSelected ? '!bg-transparent !text-primary' : ''
         }`
-      : `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground`;
+      : `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground ${
+          isSelected ? 'bg-lightprimary text-primary dark:bg-lightprimary' : ''
+        }`;
 
     return (
       <div onClick={onClose}>
