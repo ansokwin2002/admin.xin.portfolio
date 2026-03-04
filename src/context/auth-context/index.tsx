@@ -76,13 +76,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/admin');
       } else {
         const errorMsg = data.message || 'Login failed';
-        toast.error(errorMsg);
+        // We throw the message so AuthLogin can handle it (show as inline error)
         throw new Error(errorMsg);
       }
     } catch (error: any) {
-      if (!error.message.includes('Login failed')) {
-        toast.error('Network error or server is down');
-      }
       throw error;
     }
   };
@@ -104,13 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/admin');
       } else {
         const errorMsg = data.message || 'Registration failed';
-        toast.error(errorMsg);
         throw new Error(errorMsg);
       }
     } catch (error: any) {
-      if (!error.message.includes('Registration failed')) {
-        toast.error('Network error or server is down');
-      }
       throw error;
     }
   };
