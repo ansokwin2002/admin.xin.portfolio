@@ -18,11 +18,13 @@ import {
 import { Button } from 'src/components/ui/button';
 import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
+import { Checkbox } from 'src/components/ui/checkbox';
 import BreadcrumbComp from 'src/layouts/full/shared/breadcrumb/BreadcrumbComp';
 import CardBox from 'src/components/shared/CardBox';
 import { Icon } from '@iconify/react';
 import { toast } from 'sonner';
 import { useAuth } from 'src/context/auth-context';
+import bannerImg from 'src/assets/images/backgrounds/welcome-bg2.png';
 
 const BCrumb = [
   {
@@ -50,8 +52,10 @@ const LogoClientList = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [currentClient, setCurrentClient] = useState<LogoClient | null>(null);
   const [clientToDelete, setClientToDelete] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -218,6 +222,53 @@ const LogoClientList = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_URL}/logo-clients/bulk-delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || 'Clients deleted successfully');
+        setIsBulkDeleteDialogOpen(false);
+        setSelectedIds([]);
+        fetchClients();
+      } else {
+        toast.error(data.message || 'Failed to delete clients');
+      }
+    } catch (error) {
+      toast.error('Network error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === clients.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(clients.map((c) => c.id));
+    }
+  };
+
+  const toggleSelectOne = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((item) => item !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
   const resetForm = () => {
     setFormData({ title: '', subtitle: '', ordering: '', image: null });
     setPreviewImage(null);
@@ -225,10 +276,23 @@ const LogoClientList = () => {
 
   return (
     <>
-      <BreadcrumbComp title="Logo Clients" items={BCrumb} />
+      <BreadcrumbComp title="Logo Clients" items={BCrumb} image={bannerImg} />
       <CardBox>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h4 className="text-xl font-bold text-foreground">Client Logos</h4>
+          <div className="flex items-center gap-4">
+            <h4 className="text-xl font-bold text-foreground">Client Logos</h4>
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex items-center gap-2 text-white"
+                onClick={() => setIsBulkDeleteDialogOpen(true)}
+              >
+                <Icon icon="solar:trash-bin-trash-linear" width={16} className="text-white" />
+                Delete Selected ({selectedIds.length})
+              </Button>
+            )}
+          </div>
           <Dialog open={isAddDialogOpen} onOpenChange={(val) => { setIsAddDialogOpen(val); if(!val) resetForm(); }}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -280,6 +344,12 @@ const LogoClientList = () => {
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
+                <TableHead className="w-12 py-4 px-4">
+                  <Checkbox
+                    checked={selectedIds.length === clients.length && clients.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead className="font-bold py-4 w-16 text-center">Order</TableHead>
                 <TableHead className="font-bold py-4">Logo</TableHead>
                 <TableHead className="font-bold py-4">Title</TableHead>
@@ -289,11 +359,17 @@ const LogoClientList = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10">Loading clients...</TableCell>
+                  <TableCell colSpan={5} className="text-center py-10">Loading clients...</TableCell>
                 </TableRow>
               ) : clients.length > 0 ? (
                 clients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="px-4">
+                      <Checkbox
+                        checked={selectedIds.includes(client.id)}
+                        onCheckedChange={() => toggleSelectOne(client.id)}
+                      />
+                    </TableCell>
                     <TableCell className="text-center">
                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-xs font-bold">
                         {client.ordering}
@@ -324,7 +400,7 @@ const LogoClientList = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No clients found.</TableCell>
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No clients found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -373,7 +449,7 @@ const LogoClientList = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
@@ -390,6 +466,29 @@ const LogoClientList = () => {
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>No, Keep it</Button>
             <Button variant="destructive" onClick={handleDelete}>Yes, Delete it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Icon icon="solar:danger-triangle-linear" width={24} />
+              Confirm Bulk Deletion
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete {selectedIds.length} selected logo clients? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsBulkDeleteDialogOpen(false)}>No, Keep them</Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={isSubmitting}>
+              {isSubmitting ? 'Deleting...' : 'Yes, Delete All'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
