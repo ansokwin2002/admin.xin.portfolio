@@ -39,6 +39,7 @@ interface LogoClient {
   image: string;
   title: string;
   subtitle: string;
+  ordering: number;
 }
 
 const LogoClientList = () => {
@@ -58,6 +59,7 @@ const LogoClientList = () => {
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
+    ordering: '',
     image: null as File | null,
   });
 
@@ -107,6 +109,7 @@ const LogoClientList = () => {
     postData.append('image', formData.image);
     postData.append('title', formData.title);
     if (formData.subtitle) postData.append('subtitle', formData.subtitle);
+    if (formData.ordering) postData.append('ordering', formData.ordering);
 
     try {
       const response = await fetch(`${API_URL}/logo-clients`, {
@@ -139,6 +142,7 @@ const LogoClientList = () => {
     setFormData({
       title: client.title,
       subtitle: client.subtitle || '',
+      ordering: client.ordering?.toString() || '0',
       image: null,
     });
     setPreviewImage(client.image);
@@ -153,6 +157,7 @@ const LogoClientList = () => {
     updateData.append('_method', 'PUT'); // Laravel requirement for multipart PUT
     updateData.append('title', formData.title);
     updateData.append('subtitle', formData.subtitle);
+    updateData.append('ordering', formData.ordering);
     if (formData.image) {
       updateData.append('image', formData.image);
     }
@@ -214,7 +219,7 @@ const LogoClientList = () => {
   };
 
   const resetForm = () => {
-    setFormData({ title: '', subtitle: '', image: null });
+    setFormData({ title: '', subtitle: '', ordering: '', image: null });
     setPreviewImage(null);
   };
 
@@ -256,6 +261,10 @@ const LogoClientList = () => {
                   <Label htmlFor="subtitle">Subtitle (Optional)</Label>
                   <Input id="subtitle" value={formData.subtitle} onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })} placeholder="e.g. Technology Partner" />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ordering">Ordering Number</Label>
+                  <Input id="ordering" type="number" value={formData.ordering} onChange={(e) => setFormData({ ...formData, ordering: e.target.value })} placeholder="e.g. 1" />
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
@@ -271,6 +280,7 @@ const LogoClientList = () => {
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
+                <TableHead className="font-bold py-4 w-16 text-center">Order</TableHead>
                 <TableHead className="font-bold py-4">Logo</TableHead>
                 <TableHead className="font-bold py-4">Title</TableHead>
                 <TableHead className="font-bold py-4 text-right">Actions</TableHead>
@@ -279,11 +289,16 @@ const LogoClientList = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-10">Loading clients...</TableCell>
+                  <TableCell colSpan={4} className="text-center py-10">Loading clients...</TableCell>
                 </TableRow>
               ) : clients.length > 0 ? (
                 clients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="text-center">
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-xs font-bold">
+                        {client.ordering}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <div className="w-16 h-16 bg-white rounded-md p-2 flex items-center justify-center border border-border">
                         <img src={client.image} alt={client.title} className="max-h-full max-w-full object-contain" />
@@ -309,7 +324,7 @@ const LogoClientList = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">No clients found.</TableCell>
+                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No clients found.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -343,6 +358,10 @@ const LogoClientList = () => {
             <div className="space-y-2">
               <Label htmlFor="edit-subtitle">Subtitle (Optional)</Label>
               <Input id="edit-subtitle" value={formData.subtitle} onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-ordering">Ordering Number</Label>
+              <Input id="edit-ordering" type="number" value={formData.ordering} onChange={(e) => setFormData({ ...formData, ordering: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
