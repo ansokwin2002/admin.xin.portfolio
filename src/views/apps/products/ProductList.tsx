@@ -18,6 +18,7 @@ import { Button } from 'src/components/ui/button';
 import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
 import { Textarea } from 'src/components/ui/textarea';
+import { Checkbox } from 'src/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "src/components/ui/tabs";
 import BreadcrumbComp from 'src/layouts/full/shared/breadcrumb/BreadcrumbComp';
 import CardBox from 'src/components/shared/CardBox';
@@ -64,6 +65,7 @@ interface Product {
   slug: string;
   image: string;
   status: boolean;
+  ordering: number | null;
   translations: Translation[];
   features: Feature[];
   urls?: ProductUrl[];
@@ -77,16 +79,18 @@ const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // Form State
   const [slug, setSlug] = useState('');
   const [status, setStatus] = useState(true);
+  const [ordering, setOrdering] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [urls, setUrls] = useState<ProductUrl[]>([{ link: '' }]);
@@ -120,6 +124,7 @@ const ProductList = () => {
   const resetForm = () => {
     setSlug('');
     setStatus(true);
+    setOrdering('');
     setImageFile(null);
     setPreviewImage(null);
     setUrls([{ link: '' }]);
@@ -133,6 +138,7 @@ const ProductList = () => {
     })));
     setFeatures([]);
     setEditingProduct(null);
+    setSelectedIds([]);
   };
 
   const handleTranslationChange = (locale: string, field: keyof Translation, value: string) => {
@@ -167,6 +173,57 @@ const ProductList = () => {
       t.locale === locale ? { ...t, feature_text: value } : t
     );
     setFeatures(newFeatures);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === products.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(products.map(p => p.id));
+    }
+  };
+
+  const toggleSelectOne = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `You are about to delete ${selectedIds.length} products. This action cannot be undone!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete them!',
+      cancelButtonText: 'No, cancel',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`${API_URL}/products/bulk-delete`, {
+          method: 'POST', // Using POST as per common Laravel bulk routes, or DELETE if configured
+          headers: { 
+            Authorization: `Bearer ${token}`, 
+            'Content-Type': 'application/json',
+            Accept: 'application/json' 
+          },
+          body: JSON.stringify({ ids: selectedIds, _method: 'DELETE' }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          toast.success(data.message || 'Products deleted successfully');
+          setSelectedIds([]);
+          fetchProducts();
+        } else {
+          toast.error(data.message || 'Failed to delete products');
+        }
+      } catch (error) {
+        toast.error('Network error during bulk delete');
+      }
+    }
   };
 
   const handleSubmit = async (isConfirmed = false) => {
@@ -234,6 +291,7 @@ const ProductList = () => {
     const formData = new FormData();
     formData.append('slug', slug);
     formData.append('status', status ? '1' : '0');
+    if (ordering) formData.append('ordering', ordering);
     if (imageFile) formData.append('image', imageFile);
 
     // Append Translations - Only send those with a title (EN is required)
@@ -308,6 +366,7 @@ const ProductList = () => {
         setEditingProduct(fullProduct);
         setSlug(fullProduct.slug);
         setStatus(fullProduct.status);
+        setOrdering(fullProduct.ordering?.toString() || '');
         setPreviewImage(fullProduct.image);
         setUrls(fullProduct.urls && fullProduct.urls.length > 0 ? fullProduct.urls : [{ link: '' }]);
         
@@ -389,16 +448,37 @@ const ProductList = () => {
       <BreadcrumbComp title="Products" items={BCrumb} />
       <CardBox>
         <div className="flex justify-between items-center mb-6">
-          <h4 className="text-xl font-bold">Manage Products</h4>
-          <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="flex gap-2">
-            <Icon icon="solar:add-circle-linear" width={18} /> Add Product
-          </Button>
+          <div className="flex items-center gap-4">
+            <h4 className="text-xl font-bold">Manage Products</h4>
+            {selectedIds.length > 0 && (
+              <Button 
+                variant="destructive" 
+                onClick={handleBulkDelete} 
+                className="flex gap-2 animate-in fade-in zoom-in duration-200 bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Icon icon="solar:trash-bin-trash-bold" width={18} className="text-white" /> 
+                <span className="text-white">Delete Selected ({selectedIds.length})</span>
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="flex gap-2">
+              <Icon icon="solar:add-circle-linear" width={18} /> Add Product
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto border rounded-lg">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
+                <TableHead className="w-[50px]">
+                  <Checkbox 
+                    checked={products.length > 0 && selectedIds.length === products.length} 
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="w-[80px]">Order</TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Title (EN)</TableHead>
                 <TableHead>Slug</TableHead>
@@ -407,9 +487,16 @@ const ProductList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? <TableRow><TableCell colSpan={5} className="text-center py-10">Loading...</TableCell></TableRow> : 
+              {loading ? <TableRow><TableCell colSpan={7} className="text-center py-10">Loading...</TableCell></TableRow> : 
                 products.map((p) => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} className={selectedIds.includes(p.id) ? 'bg-muted/30' : ''}>
+                  <TableCell>
+                    <Checkbox 
+                      checked={selectedIds.includes(p.id)} 
+                      onCheckedChange={() => toggleSelectOne(p.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{p.ordering ?? '-'}</TableCell>
                   <TableCell>
                     <img 
                       src={p.image ? `${import.meta.env.VITE_STORAGE_URL || ''}/storage/${p.image}` : '/placeholder.png'} 
@@ -602,9 +689,15 @@ const ProductList = () => {
                 </div>
                 <input id="p-image" type="file" className="hidden" accept="image/*" onChange={(e) => { if(e.target.files?.[0]) { setImageFile(e.target.files[0]); setPreviewImage(URL.createObjectURL(e.target.files[0])); } }} />
               </div>
-              <div className="space-y-2">
-                <Label>Slug (Custom URL) <span className="text-muted-foreground text-xs font-normal">(Optional)</span></Label>
-                <Input value={slug} onChange={e => setSlug(e.target.value)} placeholder="e.g. cloud-hosting-pro" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Slug (Custom URL) <span className="text-muted-foreground text-xs font-normal">(Optional)</span></Label>
+                  <Input value={slug} onChange={e => setSlug(e.target.value)} placeholder="e.g. cloud-hosting-pro" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Order <span className="text-muted-foreground text-xs font-normal">(Sorting)</span></Label>
+                  <Input type="number" value={ordering} onChange={e => setOrdering(e.target.value)} placeholder="e.g. 1" />
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="p-status" checked={status} onChange={e => setStatus(e.target.checked)} className="rounded border-gray-300" />
