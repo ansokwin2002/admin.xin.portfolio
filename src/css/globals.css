@@ -312,3 +312,17 @@ body {
     @apply pr-9!;
   }
 }
+
+/* SweetAlert2 Z-Index fix for Radix UI Dialog */
+.swal2-top-layer {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+body.swal2-shown {
+  pointer-events: none !important;
+}
+
+body.swal2-shown .swal2-container {
+  pointer-events: auto !important;
+}

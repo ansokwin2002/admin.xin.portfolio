@@ -13,9 +13,10 @@ interface BreadCrumbType {
   items?: BreadcrumbItem[];
   title: string;
   children?: JSX.Element;
+  image?: string;
 }
 
-const BreadcrumbComp = ({ title, items = [] }: BreadCrumbType) => {
+const BreadcrumbComp = ({ title, items = [], image }: BreadCrumbType) => {
   return (
     <CardBox
       className="mb-6 py-4 bg-lightsecondary overflow-hidden rounded-md border-none shadow-none! dark:shadow-none! relative"
@@ -59,7 +60,7 @@ const BreadcrumbComp = ({ title, items = [] }: BreadCrumbType) => {
 
         <div className="col-span-2 flex justify-center -mb-7 max-h-[120px] max-w-[140px]">
           <div className="hidden sm:block absolute right-7 bottom-0">
-            <img src={breadcrumbBg} alt="support-img" width={145} height={95} />
+            <img src={image || breadcrumbBg} alt="support-img" width={145} height={95} />
           </div>
         </div>
       </div>
