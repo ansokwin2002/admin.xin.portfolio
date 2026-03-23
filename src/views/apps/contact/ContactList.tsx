@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import {
   Table,
   TableBody,
@@ -52,10 +53,7 @@ const ContactList = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<ContactMessage | null>(null);
-  const [messageToDelete, setMessageToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -104,66 +102,84 @@ const ContactList = () => {
   const currentItems = filteredMessages.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
 
-  const confirmDelete = (id: number) => {
-    setMessageToDelete(id);
-    setIsDeleteDialogOpen(true);
+  const handleDelete = (id: number) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You are about to delete this message. This action cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`${API_URL}/contacts/${id}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            setMessages(messages.filter((msg) => msg.id !== id));
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+            toast.success('Message deleted successfully');
+          } else {
+            toast.error('Failed to delete message');
+          }
+        } catch (error) {
+          toast.error('Network error');
+        }
+      }
+    });
   };
 
-  const handleDelete = async () => {
-    if (messageToDelete === null) return;
-
-    try {
-      const response = await fetch(`${API_URL}/contacts/${messageToDelete}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setMessages(messages.filter((msg) => msg.id !== messageToDelete));
-        setSelectedIds(selectedIds.filter(id => id !== messageToDelete));
-        toast.success('Message deleted successfully');
-        setIsDeleteDialogOpen(false);
-      } else {
-        toast.error('Failed to delete message');
-      }
-    } catch (error) {
-      toast.error('Network error');
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) {
+      toast.info('Please select at least one message to delete.');
+      return;
     }
-  };
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `You are about to delete ${selectedIds.length} messages. This action cannot be undone!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete them!',
+      cancelButtonText: 'No, cancel',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setIsSubmitting(true);
+        try {
+          const response = await fetch(`${API_URL}/contacts/bulk-delete`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({ ids: selectedIds }),
+          });
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`${API_URL}/contacts/bulk-delete`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.message || 'Messages deleted successfully');
-        setIsBulkDeleteDialogOpen(false);
-        setMessages(messages.filter(msg => !selectedIds.includes(msg.id)));
-        setSelectedIds([]);
-        fetchContacts();
-      } else {
-        toast.error(data.message || 'Failed to delete messages');
+          const data = await response.json();
+          if (data.success) {
+            toast.success(data.message || 'Messages deleted successfully');
+            setMessages(messages.filter(msg => !selectedIds.includes(msg.id)));
+            setSelectedIds([]);
+          } else {
+            toast.error(data.message || 'Failed to delete messages');
+          }
+        } catch (error) {
+          toast.error('Network error');
+        } finally {
+          setIsSubmitting(false);
+        }
       }
-    } catch (error) {
-      toast.error('Network error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const toggleSelectAll = () => {
@@ -273,10 +289,11 @@ const ContactList = () => {
                 variant="destructive"
                 size="sm"
                 className="flex items-center gap-2 text-white"
-                onClick={() => setIsBulkDeleteDialogOpen(true)}
+                onClick={handleBulkDelete}
+                disabled={isSubmitting}
               >
                 <Icon icon="solar:trash-bin-trash-linear" width={16} className="text-white" />
-                Delete Selected ({selectedIds.length})
+                {isSubmitting ? 'Deleting...' : `Delete Selected (${selectedIds.length})`}
               </Button>
             )}
           </div>
@@ -389,7 +406,7 @@ const ContactList = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => confirmDelete(msg.id)}
+                          onClick={() => handleDelete(msg.id)}
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Icon icon="solar:trash-bin-trash-linear" width={18} />
@@ -572,54 +589,6 @@ const ContactList = () => {
               Cancel
             </Button>
             <Button onClick={handleUpdate}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Single Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Icon icon="solar:danger-triangle-linear" width={24} />
-              Confirm Deletion
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete this contact message? This action cannot be undone.
-            </p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              No, Keep it
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Yes, Delete it
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Delete Confirmation Dialog */}
-      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Icon icon="solar:danger-triangle-linear" width={24} />
-              Confirm Bulk Deletion
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete {selectedIds.length} selected contact messages? This action cannot be undone.
-            </p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsBulkDeleteDialogOpen(false)}>No, Keep them</Button>
-            <Button variant="destructive" onClick={handleBulkDelete} disabled={isSubmitting}>
-              {isSubmitting ? 'Deleting...' : 'Yes, Delete All'}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

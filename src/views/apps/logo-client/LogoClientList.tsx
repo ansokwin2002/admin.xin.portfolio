@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import {
   Table,
   TableBody,
@@ -51,10 +52,7 @@ const LogoClientList = () => {
   const [clients, setClients] = useState<LogoClient[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [currentClient, setCurrentClient] = useState<LogoClient | null>(null);
-  const [clientToDelete, setClientToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -192,65 +190,84 @@ const LogoClientList = () => {
     }
   };
 
-  const confirmDelete = (id: number) => {
-    setClientToDelete(id);
-    setIsDeleteDialogOpen(true);
+  const handleDelete = (id: number) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You are about to delete this logo client. This action cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`${API_URL}/logo-clients/${id}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            toast.success('Client deleted successfully');
+            fetchClients();
+          } else {
+            toast.error('Failed to delete client');
+          }
+        } catch (error) {
+          toast.error('Network error');
+        }
+      }
+    });
   };
 
-  const handleDelete = async () => {
-    if (clientToDelete === null) return;
-
-    try {
-      const response = await fetch(`${API_URL}/logo-clients/${clientToDelete}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success('Client deleted successfully');
-        setIsDeleteDialogOpen(false);
-        fetchClients();
-      } else {
-        toast.error('Failed to delete client');
-      }
-    } catch (error) {
-      toast.error('Network error');
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) {
+      toast.info('Please select at least one client to delete.');
+      return;
     }
-  };
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `You are about to delete ${selectedIds.length} logo clients. This action cannot be undone!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete them!',
+      cancelButtonText: 'No, cancel',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setIsSubmitting(true);
+        try {
+          const response = await fetch(`${API_URL}/logo-clients/bulk-delete`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({ ids: selectedIds }),
+          });
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`${API_URL}/logo-clients/bulk-delete`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.message || 'Clients deleted successfully');
-        setIsBulkDeleteDialogOpen(false);
-        setSelectedIds([]);
-        fetchClients();
-      } else {
-        toast.error(data.message || 'Failed to delete clients');
+          const data = await response.json();
+          if (data.success) {
+            toast.success(data.message || 'Clients deleted successfully');
+            setSelectedIds([]);
+            fetchClients();
+          } else {
+            toast.error(data.message || 'Failed to delete clients');
+          }
+        } catch (error) {
+          toast.error('Network error');
+        } finally {
+          setIsSubmitting(false);
+        }
       }
-    } catch (error) {
-      toast.error('Network error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const toggleSelectAll = () => {
@@ -286,7 +303,7 @@ const LogoClientList = () => {
                 variant="destructive"
                 size="sm"
                 className="flex items-center gap-2 text-white"
-                onClick={() => setIsBulkDeleteDialogOpen(true)}
+                onClick={handleBulkDelete}
               >
                 <Icon icon="solar:trash-bin-trash-linear" width={16} className="text-white" />
                 Delete Selected ({selectedIds.length})
@@ -391,7 +408,7 @@ const LogoClientList = () => {
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(client)} className="h-8 w-8 text-primary hover:text-primary hover:bg-lightprimary">
                           <Icon icon="solar:pen-new-square-linear" width={18} />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => confirmDelete(client.id)} className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(client.id)} className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
                           <Icon icon="solar:trash-bin-trash-linear" width={18} />
                         </Button>
                       </div>
@@ -417,7 +434,7 @@ const LogoClientList = () => {
           <div className="grid gap-4 py-4">
             <div className="space-y-2 text-center">
               <Label className="block mb-2">Logo Image</Label>
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => document.getElementById('edit-image')?.click()}>
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => document.getElementById('edit-.image')?.click()}>
                 {previewImage ? (
                   <img src={previewImage} alt="Preview" className="h-24 object-contain mb-2" />
                 ) : (
@@ -444,50 +461,6 @@ const LogoClientList = () => {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleUpdate} disabled={isSubmitting}>
               {isSubmitting ? 'Updating...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Single Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Icon icon="solar:danger-triangle-linear" width={24} />
-              Confirm Deletion
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete this logo client? This action cannot be undone.
-            </p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>No, Keep it</Button>
-            <Button variant="destructive" onClick={handleDelete}>Yes, Delete it</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Delete Confirmation Dialog */}
-      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Icon icon="solar:danger-triangle-linear" width={24} />
-              Confirm Bulk Deletion
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete {selectedIds.length} selected logo clients? This action cannot be undone.
-            </p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsBulkDeleteDialogOpen(false)}>No, Keep them</Button>
-            <Button variant="destructive" onClick={handleBulkDelete} disabled={isSubmitting}>
-              {isSubmitting ? 'Deleting...' : 'Yes, Delete All'}
             </Button>
           </DialogFooter>
         </DialogContent>

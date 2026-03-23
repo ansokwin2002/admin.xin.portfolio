@@ -326,3 +326,30 @@ body.swal2-shown {
 body.swal2-shown .swal2-container {
   pointer-events: auto !important;
 }
+
+/* View Transition API styles for theme change */
+@keyframes reveal {
+  from {
+    clip-path: circle(0% at var(--x) var(--y));
+  }
+  to {
+    clip-path: circle(150% at var(--x) var(--y));
+  }
+}
+
+::view-transition-new(root) {
+  animation: reveal 0.3s ease-in-out;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.dark::view-transition-old(root) {
+  z-index: 1;
+}
+
+.dark::view-transition-new(root) {
+  z-index: 999;
+}

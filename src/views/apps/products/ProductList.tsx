@@ -82,9 +82,8 @@ const ProductList = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
-  const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  const [viewLocale, setViewLocale] = useState('en');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // Form State
@@ -419,6 +418,7 @@ const ProductList = () => {
       const resData = await response.json();
       if (resData.success) {
         setViewingProduct(resData.data);
+        setViewLocale('en');
         setIsViewDialogOpen(true);
       }
     } catch (error) {
@@ -426,21 +426,34 @@ const ProductList = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!productToDelete) return;
-    try {
-      const response = await fetch(`${API_URL}/products/${productToDelete}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        toast.success('Product deleted');
-        setIsDeleteDialogOpen(false);
-        fetchProducts();
+  const handleDelete = (id: number) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You are about to delete this product. This action cannot be undone!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`${API_URL}/products/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (response.ok) {
+            toast.success('Product deleted');
+            fetchProducts();
+          } else {
+            toast.error('Delete failed');
+          }
+        } catch (error) {
+          toast.error('Delete failed');
+        }
       }
-    } catch (error) {
-      toast.error('Delete failed');
-    }
+    });
   };
 
   return (
@@ -518,7 +531,7 @@ const ProductList = () => {
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => handleView(p)} className="text-info"><Icon icon="solar:eye-linear" width={18} /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="text-primary"><Icon icon="solar:pen-new-square-linear" width={18} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => { setProductToDelete(p.id); setIsDeleteDialogOpen(true); }} className="text-destructive"><Icon icon="solar:trash-bin-trash-linear" width={18} /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="text-destructive"><Icon icon="solar:trash-bin-trash-linear" width={18} /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -574,7 +587,7 @@ const ProductList = () => {
 
               {/* Middle & Right Column: Content & Features */}
               <div className="md:col-span-2 space-y-8">
-                <Tabs defaultValue="en">
+                <Tabs value={viewLocale} onValueChange={setViewLocale}>
                   <TabsList className="grid grid-cols-4 w-full max-w-[400px]">
                     {LANGUAGES.map(l => <TabsTrigger key={l.code} value={l.code}>{l.name}</TabsTrigger>)}
                   </TabsList>
@@ -619,8 +632,10 @@ const ProductList = () => {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {viewingProduct.features.map((f, fi) => {
-                      // Get English feature text as fallback, or first available translation
-                      const featureText = f.translations.find(ft => ft.locale === 'en')?.feature_text || f.translations[0]?.feature_text;
+                      // Get current locale feature text, fallback to English, then first available
+                      const featureText = f.translations.find(ft => ft.locale === viewLocale)?.feature_text || 
+                                          f.translations.find(ft => ft.locale === 'en')?.feature_text || 
+                                          f.translations[0]?.feature_text;
                       return (
                         <div key={fi} className="flex items-start gap-2 p-3 border rounded-lg bg-background hover:border-primary/50 transition-colors group">
                           <Icon icon="solar:check-circle-bold" className="text-green-500 mt-0.5 shrink-0" />
@@ -786,22 +801,6 @@ const ProductList = () => {
             </Button>
             <Button onClick={() => handleSubmit()} disabled={isSubmitting} className="flex gap-2">
               <Icon icon="solar:diskette-linear" width={18} /> {isSubmitting ? 'Saving...' : 'Save Product'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader><DialogTitle className="text-destructive flex items-center gap-2"><Icon icon="solar:danger-triangle-linear" width={24} /> Confirm Delete</DialogTitle></DialogHeader>
-          <p className="py-4 text-muted-foreground text-sm">Are you sure you want to delete this product? All translations and features will be removed.</p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex gap-2">
-              <Icon icon="solar:close-circle-linear" width={18} /> Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} className="flex gap-2">
-              <Icon icon="solar:trash-bin-trash-linear" width={18} /> Delete Now
             </Button>
           </DialogFooter>
         </DialogContent>
