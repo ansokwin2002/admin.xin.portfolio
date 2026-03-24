@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import {
   Table,
@@ -85,6 +86,8 @@ const ProductList = () => {
   const [viewLocale, setViewLocale] = useState('en');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Form State
   const [slug, setSlug] = useState('');
@@ -554,6 +557,9 @@ const ProductList = () => {
     });
   };
 
+  const paginatedProducts = products.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(products.length / pageSize);
+
   return (
     <>
       <BreadcrumbComp title="Products" items={BCrumb} />
@@ -599,7 +605,7 @@ const ProductList = () => {
             </TableHeader>
             <TableBody>
               {loading ? <TableRow><TableCell colSpan={7} className="text-center py-10">Loading...</TableCell></TableRow> : 
-                products.map((p) => (
+                paginatedProducts.map((p) => (
                 <TableRow key={p.id} className={selectedIds.includes(p.id) ? 'bg-muted/30' : ''}>
                   <TableCell>
                     <Checkbox 
@@ -637,6 +643,35 @@ const ProductList = () => {
             </TableBody>
           </Table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 px-2">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+              <span className="font-medium">
+                {Math.min(currentPage * pageSize, products.length)}
+              </span>{' '}
+              of <span className="font-medium">{products.length}</span> results
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </CardBox>
 
       {/* View Detail Dialog */}
@@ -653,7 +688,7 @@ const ProductList = () => {
 
           {viewingProduct && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-6">
-              {/* ... (rest of viewingProduct content) ... */}
+              {/* Image and URLs */}
               <div className="space-y-6">
                 <div className="aspect-square rounded-xl overflow-hidden border bg-muted/30">
                   <img 
@@ -768,7 +803,7 @@ const ProductList = () => {
         >
           <DialogHeader><DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle></DialogHeader>
           
-          {/* ... (form content remains the same) ... */}
+          {/* Form Content */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
             <div className="space-y-4">
               <div className="space-y-2">

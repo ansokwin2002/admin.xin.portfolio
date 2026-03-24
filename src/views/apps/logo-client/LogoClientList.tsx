@@ -56,6 +56,8 @@ const LogoClientList = () => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Form states
   const [formData, setFormData] = useState({
@@ -389,6 +391,9 @@ const LogoClientList = () => {
     setPreviewImage(null);
   };
 
+  const paginatedClients = clients.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(clients.length / pageSize);
+
   return (
     <>
       <BreadcrumbComp title="Logo Clients" items={BCrumb} image={bannerImg} />
@@ -476,8 +481,8 @@ const LogoClientList = () => {
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-10">Loading clients...</TableCell>
                 </TableRow>
-              ) : clients.length > 0 ? (
-                clients.map((client) => (
+              ) : paginatedClients.length > 0 ? (
+                paginatedClients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="px-4">
                       <Checkbox
@@ -521,6 +526,35 @@ const LogoClientList = () => {
             </TableBody>
           </Table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 px-2">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+              <span className="font-medium">
+                {Math.min(currentPage * pageSize, clients.length)}
+              </span>{' '}
+              of <span className="font-medium">{clients.length}</span> results
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </CardBox>
 
       {/* Edit Dialog */}

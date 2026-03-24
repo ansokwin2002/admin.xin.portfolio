@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { format } from 'date-fns';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router';
@@ -28,6 +28,8 @@ import {
 const TicketListing = () => {
   const { tickets, deleteTicket, searchTickets, ticketSearch, filter }: TicketContextType =
     useContext(TicketContext);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const navigate = useNavigate();
 
@@ -64,6 +66,11 @@ const TicketListing = () => {
   };
 
   const visibleTickets = getVisibleTickets(tickets, filter, ticketSearch.toLowerCase());
+  const paginatedTickets = visibleTickets.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+  const totalPages = Math.ceil(visibleTickets.length / pageSize);
 
   const ticketBadge = (ticket: TicketType) => {
     return ticket.Status === 'Open'
@@ -124,7 +131,7 @@ const TicketListing = () => {
           </TableHeader>
 
           <TableBody>
-            {visibleTickets.map((ticket) => (
+            {paginatedTickets.map((ticket) => (
               <TableRow key={ticket.Id}>
                 <TableCell className="whitespace-nowrap">{ticket.Id}</TableCell>
                 <TableCell className="max-w-md">
@@ -174,6 +181,35 @@ const TicketListing = () => {
           </TableBody>
         </Table>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 px-2">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+              <span className="font-medium">
+                {Math.min(currentPage * pageSize, visibleTickets.length)}
+              </span>{' '}
+              of <span className="font-medium">{visibleTickets.length}</span> results
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+      )}
     </div>
   );
 };

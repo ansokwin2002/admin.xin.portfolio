@@ -5,6 +5,14 @@ import CardBox from "src/components/shared/CardBox";
 import { TicketData } from "src/api/ticket/ticket-data";
 import { useEffect, useState } from "react";
 
+interface ChartDataState {
+  categories: string[];
+  series: {
+    name: string;
+    data: number[];
+  }[];
+}
+
 const SalesOverview = () => {
   const { theme } = useTheme();
   const primary = "rgba(93, 135, 255, 1)";
@@ -12,7 +20,7 @@ const SalesOverview = () => {
   const tertiary = "rgba(255, 193, 7, 1)";
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const [chartData, setChartData] = useState({
+  const [chartData, setChartData] = useState<ChartDataState>({
     categories: [],
     series: [],
   });
@@ -74,7 +82,6 @@ const SalesOverview = () => {
       bar: {
         horizontal: false,
         columnWidth: "42%",
-        endingShape: "rounded",
         borderRadius: 5,
       },
     },

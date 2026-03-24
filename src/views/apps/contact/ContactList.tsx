@@ -336,24 +336,37 @@ const ContactList = () => {
     if (!phone) return null;
     const cleanPhone = phone.replace(/[\s\(\)-]/g, '');
     
-    // Common mappings
+    // All provided country mappings
+    if (cleanPhone.startsWith('+855')) return 'kh';
     if (cleanPhone.startsWith('+86')) return 'cn';
-    if (cleanPhone.startsWith('+966')) return 'sa';
-    if (cleanPhone.startsWith('+1')) return 'us';
-    if (cleanPhone.startsWith('+44')) return 'gb';
-    if (cleanPhone.startsWith('+33')) return 'fr';
+    if (cleanPhone.startsWith('+886')) return 'tw';
     if (cleanPhone.startsWith('+66')) return 'th';
     if (cleanPhone.startsWith('+84')) return 'vn';
-    if (cleanPhone.startsWith('+81')) return 'jp';
-    if (cleanPhone.startsWith('+82')) return 'kr';
     if (cleanPhone.startsWith('+65')) return 'sg';
     if (cleanPhone.startsWith('+60')) return 'my';
     if (cleanPhone.startsWith('+62')) return 'id';
-    if (cleanPhone.startsWith('+91')) return 'in';
-    if (cleanPhone.startsWith('+971')) return 'ae';
+    if (cleanPhone.startsWith('+63')) return 'ph';
+    if (cleanPhone.startsWith('+81')) return 'jp';
+    if (cleanPhone.startsWith('+82')) return 'kr';
     if (cleanPhone.startsWith('+852')) return 'hk';
+    if (cleanPhone.startsWith('+856')) return 'la';
+    if (cleanPhone.startsWith('+95')) return 'mm';
+    if (cleanPhone.startsWith('+673')) return 'bn';
+    if (cleanPhone.startsWith('+1')) return 'us';
+    if (cleanPhone.startsWith('+44')) return 'gb';
+    if (cleanPhone.startsWith('+61')) return 'au';
+    if (cleanPhone.startsWith('+1')) return 'ca'; // Note: Both US and CA use +1, US will take precedence due to order
+    if (cleanPhone.startsWith('+971')) return 'ae';
+    if (cleanPhone.startsWith('+33')) return 'fr';
+    if (cleanPhone.startsWith('+49')) return 'de';
+    if (cleanPhone.startsWith('+7')) return 'ru';
+    if (cleanPhone.startsWith('+91')) return 'in';
+    if (cleanPhone.startsWith('+55')) return 'br';
+    if (cleanPhone.startsWith('+27')) return 'za';
+    
+    // Other common mappings that were already there
+    if (cleanPhone.startsWith('+966')) return 'sa';
     if (cleanPhone.startsWith('+853')) return 'mo';
-    if (cleanPhone.startsWith('+886')) return 'tw';
     if (cleanPhone.startsWith('+974')) return 'qa';
     if (cleanPhone.startsWith('+973')) return 'bh';
     if (cleanPhone.startsWith('+965')) return 'kw';
