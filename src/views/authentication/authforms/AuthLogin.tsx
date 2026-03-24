@@ -96,6 +96,7 @@ interface AuthLoginProps {
 const AuthLogin = ({ onCooldownUpdate }: AuthLoginProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isMathVerified, setIsMathVerified] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -211,15 +212,25 @@ const AuthLogin = ({ onCooldownUpdate }: AuthLoginProps) => {
           <div className="mb-2 block">
             <Label htmlFor="userpwd">Password</Label>
           </div>
-          <Input 
-            id="userpwd" 
-            type="password" 
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={countdown > 0}
-          />
+          <div className="relative">
+            <Input 
+              id="userpwd" 
+              type={showPassword ? 'text' : 'password'} 
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={countdown > 0}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              <Icon icon={showPassword ? 'tabler:eye-off' : 'tabler:eye'} width={20} />
+            </button>
+          </div>
         </div>
         
         <div className="mb-4 space-y-4">

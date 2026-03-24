@@ -72,7 +72,7 @@ interface Product {
 }
 
 const ProductList = () => {
-  const { token } = useAuth();
+  const { token, verifyPassword } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL;
   const dialogContentRef = useRef<HTMLDivElement>(null);
 
@@ -201,26 +201,75 @@ const ProductList = () => {
     });
 
     if (result.isConfirmed) {
-      try {
-        const response = await fetch(`${API_URL}/products/bulk-delete`, {
-          method: 'POST', // Using POST as per common Laravel bulk routes, or DELETE if configured
-          headers: { 
-            Authorization: `Bearer ${token}`, 
-            'Content-Type': 'application/json',
-            Accept: 'application/json' 
-          },
-          body: JSON.stringify({ ids: selectedIds, _method: 'DELETE' }),
-        });
-        const data = await response.json();
-        if (data.success) {
-          toast.success(data.message || 'Products deleted successfully');
-          setSelectedIds([]);
-          fetchProducts();
-        } else {
-          toast.error(data.message || 'Failed to delete products');
+      // Second confirmation with password
+      const { value: password } = await Swal.fire({
+        title: 'Confirm Bulk Deletion',
+        html: `
+          <div style="text-align: left; margin-bottom: 12px; font-size: 15px; color: #555;">Please enter your login password to confirm deleting ${selectedIds.length} products:</div>
+          <div style="position: relative; width: 100%; display: block;">
+            <input type="password" id="swal-input-bulk-password" class="swal2-input" placeholder="Enter your password" style="width: 100%; margin: 0; box-sizing: border-box; display: block; padding-right: 40px;">
+            <button type="button" id="toggle-bulk-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #777; display: flex; align-items: center; justify-content: center; padding: 4px; z-index: 10;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon-bulk"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        `,
+        didOpen: () => {
+          const input = Swal.getPopup()?.querySelector('#swal-input-bulk-password') as HTMLInputElement;
+          const toggle = Swal.getPopup()?.querySelector('#toggle-bulk-password');
+          const icon = Swal.getPopup()?.querySelector('.eye-icon-bulk');
+          
+          toggle?.addEventListener('click', () => {
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            if (icon) {
+              icon.innerHTML = type === 'password' 
+                ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+                : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            }
+          });
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Verify & Delete All',
+        confirmButtonColor: '#d33',
+        showLoaderOnConfirm: true,
+        preConfirm: async () => {
+          const pass = (Swal.getPopup()?.querySelector('#swal-input-bulk-password') as HTMLInputElement).value;
+          if (!pass) {
+            Swal.showValidationMessage('Password is required');
+            return false;
+          }
+          const isValid = await verifyPassword(pass);
+          if (!isValid) {
+            Swal.showValidationMessage('Invalid password');
+            return false;
+          }
+          return pass;
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+      });
+
+      if (password) {
+        try {
+          const response = await fetch(`${API_URL}/products/bulk-delete`, {
+            method: 'POST', // Using POST as per common Laravel bulk routes, or DELETE if configured
+            headers: { 
+              Authorization: `Bearer ${token}`, 
+              'Content-Type': 'application/json',
+              Accept: 'application/json' 
+            },
+            body: JSON.stringify({ ids: selectedIds, _method: 'DELETE' }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            toast.success(data.message || 'Products deleted successfully');
+            setSelectedIds([]);
+            fetchProducts();
+          } else {
+            toast.error(data.message || 'Failed to delete products');
+          }
+        } catch (error) {
+          toast.error('Network error during bulk delete');
         }
-      } catch (error) {
-        toast.error('Network error during bulk delete');
       }
     }
   };
@@ -438,19 +487,68 @@ const ProductList = () => {
       cancelButtonColor: '#3085d6',
     }).then(async (result) => {
       if (result.isConfirmed) {
-        try {
-          const response = await fetch(`${API_URL}/products/${id}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (response.ok) {
-            toast.success('Product deleted');
-            fetchProducts();
-          } else {
+        // Second confirmation with password
+        const { value: password } = await Swal.fire({
+          title: 'Confirm Deletion',
+          html: `
+            <div style="text-align: left; margin-bottom: 12px; font-size: 15px; color: #555;">Please enter your login password to confirm this action:</div>
+            <div style="position: relative; width: 100%; display: block;">
+              <input type="password" id="swal-input-password" class="swal2-input" placeholder="Enter your password" style="width: 100%; margin: 0; box-sizing: border-box; display: block; padding-right: 40px;">
+              <button type="button" id="toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #777; display: flex; align-items: center; justify-content: center; padding: 4px; z-index: 10;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          `,
+          didOpen: () => {
+            const input = Swal.getPopup()?.querySelector('#swal-input-password') as HTMLInputElement;
+            const toggle = Swal.getPopup()?.querySelector('#toggle-password');
+            const icon = Swal.getPopup()?.querySelector('.eye-icon');
+            
+            toggle?.addEventListener('click', () => {
+              const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+              input.setAttribute('type', type);
+              if (icon) {
+                icon.innerHTML = type === 'password' 
+                  ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+                  : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+              }
+            });
+          },
+          showCancelButton: true,
+          confirmButtonText: 'Verify & Delete',
+          confirmButtonColor: '#d33',
+          showLoaderOnConfirm: true,
+          preConfirm: async () => {
+            const pass = (Swal.getPopup()?.querySelector('#swal-input-password') as HTMLInputElement).value;
+            if (!pass) {
+              Swal.showValidationMessage('Password is required');
+              return false;
+            }
+            const isValid = await verifyPassword(pass);
+            if (!isValid) {
+              Swal.showValidationMessage('Invalid password');
+              return false;
+            }
+            return pass;
+          },
+          allowOutsideClick: () => !Swal.isLoading()
+        });
+
+        if (password) {
+          try {
+            const response = await fetch(`${API_URL}/products/${id}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.ok) {
+              toast.success('Product deleted');
+              fetchProducts();
+            } else {
+              toast.error('Delete failed');
+            }
+          } catch (error) {
             toast.error('Delete failed');
           }
-        } catch (error) {
-          toast.error('Delete failed');
         }
       }
     });

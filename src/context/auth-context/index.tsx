@@ -14,6 +14,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string, captcha_token: string) => Promise<void>;
   register: (name: string, email: string, password: string, password_confirmation: string, captcha_token: string) => Promise<void>;
+  verifyPassword: (password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -29,6 +30,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Try to load user from localStorage if it exists
+    const storedEmail = localStorage.getItem('user_email');
+    if (storedEmail) {
+      setUser({ name: 'Admin', email: storedEmail });
+    }
+
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'access_token') {
         if (!event.newValue) {
@@ -40,6 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           // Token was added (Login)
           setToken(event.newValue);
+          const newEmail = localStorage.getItem('user_email');
+          if (newEmail) setUser({ name: 'Admin', email: newEmail });
           toast.success('You have logged in from another tab.');
           navigate('/admin');
         }
@@ -72,6 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.ok) {
         setToken(data.access_token);
         localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('user_email', email);
+        setUser({ name: 'Admin', email });
         toast.success('Login successful! Welcome back.');
         navigate('/admin');
       } else {
@@ -97,6 +108,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.ok) {
         setToken(data.access_token);
         localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('user_email', email);
+        setUser({ name, email });
         toast.success('Registration successful! Account created.');
         navigate('/admin');
       } else {
@@ -108,16 +121,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const verifyPassword = async (password: string): Promise<boolean> => {
+    const email = user?.email || localStorage.getItem('user_email') || 'admin@info.com';
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, captcha_token: 'verified' }),
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('access_token');
+    localStorage.removeItem('user_email');
     toast.info('You have been logged out.');
     navigate('/admin/auth/login');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!token, user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!token, user, token, login, register, verifyPassword, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
