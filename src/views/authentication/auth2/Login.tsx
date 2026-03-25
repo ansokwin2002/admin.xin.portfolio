@@ -20,10 +20,10 @@ const Login = () => {
             </div>
             <AuthLogin onCooldownUpdate={setCooldown} />
             <div className="flex gap-2 text-base text-ld font-medium mt-6 items-center justify-center">
-              <p>New to QiYOUAdmin?</p>
+              <p className={`hidden`}>New to QiYOUAdmin?</p>
               <Link
                 to={"/admin/auth/register"}
-                className={`text-primary text-sm font-medium ${cooldown > 0 ? 'pointer-events-none opacity-50' : ''}`}
+                className={`hidden text-primary text-sm font-medium ${cooldown > 0 ? 'pointer-events-none opacity-50' : ''}`}
                 onClick={(e) => cooldown > 0 && e.preventDefault()}
               >
                 Create an account

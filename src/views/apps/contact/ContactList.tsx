@@ -500,14 +500,14 @@ const ContactList = () => {
                         >
                           <Icon icon="solar:eye-linear" width={18} />
                         </Button>
-                        {/* <Button
+                        <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(msg)}
-                          className="h-8 w-8 text-primary hover:text-primary hover:bg-lightprimary"
+                          className="h-8 w-8 text-primary hover:text-primary hover:bg-lightprimary hidden"
                         >
                           <Icon icon="solar:pen-new-square-linear" width={18} />
-                        </Button> */}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
