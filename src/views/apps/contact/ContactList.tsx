@@ -460,9 +460,10 @@ const ContactList = () => {
                           })}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          {new Date(msg.created_at).toLocaleTimeString('en-GB', {
+                          {new Date(msg.created_at).toLocaleTimeString('en-US', {
                             hour: '2-digit',
                             minute: '2-digit',
+                            hour12: true,
                           })}
                         </span>
                       </div>
@@ -586,12 +587,13 @@ const ContactList = () => {
                 <div className="space-y-1">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sent On</span>
                   <p className="text-sm font-medium text-foreground">
-                    {new Date(currentMessage.created_at).toLocaleString('en-GB', {
+                    {new Date(currentMessage.created_at).toLocaleString('en-US', {
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',
                       hour: '2-digit',
-                      minute: '2-digit'
+                      minute: '2-digit',
+                      hour12: true,
                     })}
                   </p>
                 </div>
