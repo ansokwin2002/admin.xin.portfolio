@@ -2,8 +2,8 @@
 import Chart from "react-apexcharts";
 import { useTheme } from "src/components/provider/theme-provider";
 import CardBox from "src/components/shared/CardBox";
-import { TicketData } from "src/api/ticket/ticket-data";
 import { useEffect, useState } from "react";
+import { useContact } from "src/context/contact-context";
 
 interface ChartDataState {
   categories: string[];
@@ -15,6 +15,7 @@ interface ChartDataState {
 
 const SalesOverview = () => {
   const { theme } = useTheme();
+  const { messages } = useContact();
   const primary = "rgba(93, 135, 255, 1)";
   const secondary = "rgba(73, 190, 255, 1)";
   const tertiary = "rgba(255, 193, 7, 1)";
@@ -38,7 +39,7 @@ const SalesOverview = () => {
 
         const products = productData.success ? productData.data.length : 0;
         const logoClients = logoClientData.success ? logoClientData.data.length : 0;
-        const contacts = TicketData.length;
+        const contacts = messages.length;
 
         const series = [
           {
@@ -65,7 +66,7 @@ const SalesOverview = () => {
     };
 
     fetchData();
-  }, [API_URL]);
+  }, [API_URL, messages.length]);
 
   const optionsSalesOverview: ApexCharts.ApexOptions = {
     grid: {

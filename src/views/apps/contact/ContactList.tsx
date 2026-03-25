@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import { useSearchParams } from 'react-router';
 import {
   Table,
   TableBody,
@@ -25,6 +26,8 @@ import CardBox from 'src/components/shared/CardBox';
 import { Icon } from '@iconify/react';
 import { toast } from 'sonner';
 import { useAuth } from 'src/context/auth-context';
+import { cn } from 'src/lib/utils';
+import { useContact, ContactMessage } from 'src/context/contact-context';
 
 const BCrumb = [
   {
@@ -36,60 +39,28 @@ const BCrumb = [
   },
 ];
 
-interface ContactMessage {
-  id: number;
-  name: string;
-  email: string;
-  phone: string; 
-  budget: string;
-  message: string;
-  created_at: string;
-}
-
 const ContactList = () => {
   const { token, verifyPassword } = useAuth();
+  const { messages, setMessages, isLoading: loading } = useContact();
+  const [searchParams] = useSearchParams();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<ContactMessage | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize search term from URL
+  useEffect(() => {
+    const query = searchParams.get('search');
+    setSearchTerm(query || '');
+  }, [searchParams]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-
-  const fetchContacts = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/contacts`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        // Handle both direct array and { data: [] } formats
-        const contactData = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : []);
-        setMessages(contactData);
-      } else {
-        toast.error('Failed to fetch contacts');
-      }
-    } catch (error) {
-      toast.error('Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchContacts();
-  }, [token]);
 
   const filteredMessages = messages.filter(
     (msg) =>
@@ -101,6 +72,16 @@ const ContactList = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredMessages.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
+
+  const isToday = (dateString: string) => {
+    const today = new Date();
+    const date = new Date(dateString);
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
 
   const handleDelete = (id: number) => {
     Swal.fire({
@@ -450,7 +431,13 @@ const ContactList = () => {
                 </TableRow>
               ) : currentItems.length > 0 ? (
                 currentItems.map((msg) => (
-                  <TableRow key={msg.id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow 
+                    key={msg.id} 
+                    className={cn(
+                      "hover:bg-muted/30 transition-colors",
+                      isToday(msg.created_at) && "bg-yellow-100/50 dark:bg-yellow-900/20 shadow-sm"
+                    )}
+                  >
                     <TableCell className="px-4">
                       <Checkbox
                         checked={selectedIds.includes(msg.id)}

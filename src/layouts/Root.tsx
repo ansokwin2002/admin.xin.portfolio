@@ -1,10 +1,13 @@
 import { Outlet } from 'react-router';
 import { AuthProvider } from 'src/context/auth-context';
+import { ContactProvider } from 'src/context/contact-context';
 
 const Root = () => {
   return (
     <AuthProvider>
-      <Outlet />
+      <ContactProvider>
+        <Outlet />
+      </ContactProvider>
     </AuthProvider>
   );
 };
