@@ -444,7 +444,10 @@ const ContactList = () => {
                         onCheckedChange={() => toggleSelectOne(msg.id)}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleView(msg)}
+                    >
                       <div className="flex flex-col">
                         <span className="font-semibold text-foreground">{msg.name}</span>
                         <span className="text-xs text-muted-foreground">{msg.email}</span>
@@ -479,7 +482,10 @@ const ContactList = () => {
                         {msg.budget}
                       </span>
                     </TableCell>
-                    <TableCell className="max-w-[300px]">
+                    <TableCell 
+                      className="max-w-[300px] cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleView(msg)}
+                    >
                       <p className="text-sm text-muted-foreground truncate" title={msg.message}>
                         {msg.message}
                       </p>
@@ -494,14 +500,14 @@ const ContactList = () => {
                         >
                           <Icon icon="solar:eye-linear" width={18} />
                         </Button>
-                        <Button
+                        {/* <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(msg)}
                           className="h-8 w-8 text-primary hover:text-primary hover:bg-lightprimary"
                         >
                           <Icon icon="solar:pen-new-square-linear" width={18} />
-                        </Button>
+                        </Button> */}
                         <Button
                           variant="ghost"
                           size="icon"
