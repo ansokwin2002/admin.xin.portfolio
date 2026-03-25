@@ -3,7 +3,7 @@
 import { Icon } from '@iconify/react';
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import {
   DropdownMenu,
   DropdownMenuContent,
