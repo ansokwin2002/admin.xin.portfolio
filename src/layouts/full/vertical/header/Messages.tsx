@@ -19,11 +19,20 @@ const Messages = () => {
   const { messages, todayCount } = useContact();
   const navigate = useNavigate();
 
-  // Show only today's messages or last 5 messages
+  // Show only today's messages
+  const isToday = (dateString: string) => {
+    const today = new Date();
+    const date = new Date(dateString);
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
   const displayMessages = messages
-    .slice()
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5);
+    .filter((msg) => isToday(msg.created_at))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="relative group/menu px-4 sm:px-15 ">
