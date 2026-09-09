@@ -366,11 +366,10 @@ const ProductList = () => {
       });
     });
 
-    // Append URLs
-    urls.forEach((u, i) => {
-      if (u.link) {
-        formData.append(`urls[${i}][link]`, u.link);
-      }
+    // Append URLs (always send the array, even when empty, so removed/all URLs are cleared)
+    const urlsToSend = urls.length > 0 ? urls : [{ link: '' }];
+    urlsToSend.forEach((u, i) => {
+      formData.append(`urls[${i}][link]`, u.link || '');
     });
 
     if (editingProduct) formData.append('_method', 'PUT');
@@ -866,7 +865,7 @@ const ProductList = () => {
                       newUrls[ui].link = e.target.value;
                       setUrls(newUrls);
                     }} />
-                    <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setUrls(urls.filter((_, i) => i !== ui))} disabled={urls.length === 1 && ui === 0}>
+                    <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setUrls(urls.filter((_, i) => i !== ui))}>
                       <Icon icon="solar:trash-bin-trash-linear" />
                     </Button>
                   </div>
