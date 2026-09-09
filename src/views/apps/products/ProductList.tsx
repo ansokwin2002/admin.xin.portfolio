@@ -18,11 +18,11 @@ import {
 import { Button } from 'src/components/ui/button';
 import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
-import { Textarea } from 'src/components/ui/textarea';
 import { Checkbox } from 'src/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "src/components/ui/tabs";
 import BreadcrumbComp from 'src/layouts/full/shared/breadcrumb/BreadcrumbComp';
 import CardBox from 'src/components/shared/CardBox';
+import RichTextEditor, { stripHtml } from 'src/components/shared/RichTextEditor';
 import { Icon } from '@iconify/react';
 import { toast } from 'sonner';
 import { useAuth } from 'src/context/auth-context';
@@ -65,6 +65,8 @@ interface Product {
   id: number;
   slug: string;
   image: string;
+  gif?: string | null;
+  video?: string | null;
   status: boolean;
   ordering: number | null;
   translations: Translation[];
@@ -95,6 +97,12 @@ const ProductList = () => {
   const [ordering, setOrdering] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [gifFile, setGifFile] = useState<File | null>(null);
+  const [previewGif, setPreviewGif] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<string | null>(null);
+  const [removeGif, setRemoveGif] = useState(false);
+  const [removeVideo, setRemoveVideo] = useState(false);
   const [urls, setUrls] = useState<ProductUrl[]>([{ link: '' }]);
   const [translations, setTranslations] = useState<Translation[]>(
     LANGUAGES.map(l => ({ 
@@ -129,6 +137,12 @@ const ProductList = () => {
     setOrdering('');
     setImageFile(null);
     setPreviewImage(null);
+    setGifFile(null);
+    setPreviewGif(null);
+    setVideoFile(null);
+    setPreviewVideo(null);
+    setRemoveGif(false);
+    setRemoveVideo(false);
     setUrls([{ link: '' }]);
     setTranslations(LANGUAGES.map(l => ({ 
       locale: l.code, 
@@ -148,7 +162,8 @@ const ProductList = () => {
     
     // Auto-generate slug from English title
     if (locale === 'en' && field === 'title') {
-      const generatedSlug = value
+      const plainTitle = stripHtml(value);
+      const generatedSlug = plainTitle
         .toLowerCase()
         .replace(/[^\w\s-]/g, '') // Remove non-word chars
         .replace(/\s+/g, '-')     // Replace spaces with -
@@ -280,16 +295,16 @@ const ProductList = () => {
   const handleSubmit = async (isConfirmed = false) => {
     // Basic Client-side validation for English title
     const enTrans = translations.find(t => t.locale === 'en');
-    if (!enTrans || !enTrans.title.trim()) {
+    if (!enTrans || !stripHtml(enTrans.title)) {
       toast.error('English title is required');
       return;
     }
 
-    // Required fields for English
-    if (!enTrans.sub_title1.trim()) { toast.error('English Sub Title 1 is required'); return; }
-    if (!enTrans.sub_title2.trim()) { toast.error('English Sub Title 2 is required'); return; }
-    if (!enTrans.sub_title3.trim()) { toast.error('English Sub Title 3 is required'); return; }
-    if (!enTrans.description.trim()) { toast.error('English Description is required'); return; }
+    // Required fields for English (rich text -> strip HTML before checking)
+    if (!stripHtml(enTrans.sub_title1)) { toast.error('English Sub Title 1 is required'); return; }
+    if (!stripHtml(enTrans.sub_title2)) { toast.error('English Sub Title 2 is required'); return; }
+    if (!stripHtml(enTrans.sub_title3)) { toast.error('English Sub Title 3 is required'); return; }
+    if (!stripHtml(enTrans.description)) { toast.error('English Description is required'); return; }
 
     // Validation for Features List (At least one feature with English text)
     if (features.length === 0) {
@@ -310,7 +325,7 @@ const ProductList = () => {
 
     // Check for missing optional translations before saving
     if (!isConfirmed) {
-      const filledLocales = translations.filter(t => t.title && t.title.trim() !== '').map(t => t.locale);
+      const filledLocales = translations.filter(t => stripHtml(t.title)).map(t => t.locale);
       const optionalLocales = LANGUAGES.filter(l => l.code !== 'en').map(l => l.code);
       const missing = optionalLocales.filter(l => !filledLocales.includes(l));
       
@@ -344,9 +359,15 @@ const ProductList = () => {
     formData.append('status', status ? '1' : '0');
     if (ordering) formData.append('ordering', ordering);
     if (imageFile) formData.append('image', imageFile);
+    if (gifFile) formData.append('gif', gifFile);
+    if (videoFile) formData.append('video', videoFile);
+    if (editingProduct) {
+      if (removeGif) formData.append('remove_gif', '1');
+      if (removeVideo) formData.append('remove_video', '1');
+    }
 
     // Append Translations - Only send those with a title (EN is required)
-    const validTranslations = translations.filter(t => t.title.trim() !== '');
+    const validTranslations = translations.filter(t => stripHtml(t.title));
     validTranslations.forEach((t, i) => {
       formData.append(`translations[${i}][locale]`, t.locale);
       formData.append(`translations[${i}][title]`, t.title);
@@ -418,6 +439,10 @@ const ProductList = () => {
         setStatus(fullProduct.status);
         setOrdering(fullProduct.ordering?.toString() || '');
         setPreviewImage(fullProduct.image);
+        if (fullProduct.gif) { setPreviewGif(fullProduct.gif); } else { setPreviewGif(null); }
+        setRemoveGif(false);
+        if (fullProduct.video) { setPreviewVideo(fullProduct.video); } else { setPreviewVideo(null); }
+        setRemoveVideo(false);
         setUrls(fullProduct.urls && fullProduct.urls.length > 0 ? fullProduct.urls : [{ link: '' }]);
         
         // Load all 4 language translations
@@ -595,7 +620,7 @@ const ProductList = () => {
                   />
                 </TableHead>
                 <TableHead className="w-[80px]">Order</TableHead>
-                <TableHead>Image</TableHead>
+                <TableHead>Media (Img/GIF/Video)</TableHead>
                 <TableHead>Title (EN)</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>Status</TableHead>
@@ -614,12 +639,16 @@ const ProductList = () => {
                   </TableCell>
                   <TableCell className="font-mono text-xs">{p.ordering ?? '-'}</TableCell>
                   <TableCell>
+                    <div className="relative w-12 h-12">
                     <img 
                       src={p.image ? `${import.meta.env.VITE_STORAGE_URL || ''}/storage/${p.image}` : '/placeholder.png'} 
                       className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity border border-muted" 
                       onClick={() => handleView(p)}
                       title="View Details"
                     />
+                    {p.gif && <span className="absolute -top-1 -left-1"><Icon icon="solar:gallery-bold" width={12} className="text-purple-500" /></span>}
+                    {p.video && <span className="absolute -top-1 right-0"><Icon icon="solar:videocamera-record-bold" width={12} className="text-red-500" /></span>}
+                    </div>
                   </TableCell>
                   <TableCell className="font-medium cursor-pointer hover:text-primary transition-colors" onClick={() => handleView(p)} title="View Details">
                     {p.translations.find(t => t.locale === 'en')?.title || 'N/A'}
@@ -695,6 +724,25 @@ const ProductList = () => {
                     className="w-full h-full object-contain"
                   />
                 </div>
+                {viewingProduct.gif && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground uppercase text-[10px] font-bold tracking-wider">GIF Image</Label>
+                    <img 
+                      src={`${import.meta.env.VITE_STORAGE_URL || ''}/storage/${viewingProduct.gif}`} 
+                      className="w-full max-h-60 object-contain rounded-lg border"
+                    />
+                  </div>
+                )}
+                {viewingProduct.video && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground uppercase text-[10px] font-bold tracking-wider">Product Video</Label>
+                    <video 
+                      src={`${import.meta.env.VITE_STORAGE_URL || ''}/storage/${viewingProduct.video}`} 
+                      controls 
+                      className="w-full max-h-72 object-contain rounded-lg border bg-black"
+                    />
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div>
                     <Label className="text-muted-foreground uppercase text-[10px] font-bold tracking-wider">Product Slug</Label>
@@ -730,22 +778,22 @@ const ProductList = () => {
                         {trans ? (
                           <>
                             <div className="space-y-1 border-b pb-4">
-                              <h3 className="text-2xl font-bold">{trans.title}</h3>
-                              <p className="text-primary font-medium">{trans.sub_title1}</p>
+                              <h3 className="text-2xl font-bold" dangerouslySetInnerHTML={{ __html: trans.title }} />
+                              <div className="text-primary font-medium" dangerouslySetInnerHTML={{ __html: trans.sub_title1 }} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="p-3 rounded-lg bg-muted/20 border">
                                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Sub Title 2</Label>
-                                <p className="text-sm mt-1">{trans.sub_title2 || 'N/A'}</p>
+                                <div className="text-sm mt-1" dangerouslySetInnerHTML={{ __html: trans.sub_title2 || 'N/A' }} />
                               </div>
                               <div className="p-3 rounded-lg bg-muted/20 border">
                                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Sub Title 3</Label>
-                                <p className="text-sm mt-1">{trans.sub_title3 || 'N/A'}</p>
+                                <div className="text-sm mt-1" dangerouslySetInnerHTML={{ __html: trans.sub_title3 || 'N/A' }} />
                               </div>
                             </div>
                             <div>
                               <Label className="text-[10px] font-bold uppercase text-muted-foreground">Description</Label>
-                              <p className="text-sm mt-2 text-muted-foreground leading-relaxed whitespace-pre-wrap">{trans.description || 'No description provided.'}</p>
+                              <div className="text-sm mt-2 text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: trans.description || 'No description provided.' }} />
                             </div>
                           </>
                         ) : (
@@ -836,6 +884,72 @@ const ProductList = () => {
                 </div>
                 <input id="p-image" type="file" className="hidden" accept="image/*" onChange={(e) => { if(e.target.files?.[0]) { setImageFile(e.target.files[0]); setPreviewImage(URL.createObjectURL(e.target.files[0])); } }} />
               </div>
+              <div className="space-y-2">
+                <Label>GIF Image <span className="text-muted-foreground text-xs font-normal">(Optional, animated)</span></Label>
+                <div className="relative group">
+                  <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50" onClick={() => document.getElementById('p-gif')?.click()}>
+                    {previewGif ? (
+                      <div className="relative">
+                        <img src={previewGif.startsWith('blob') ? previewGif : `${import.meta.env.VITE_STORAGE_URL || ''}/storage/${previewGif}`} className="h-32 mx-auto object-contain" />
+                        <Button 
+                          type="button" 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGifFile(null);
+                            setPreviewGif(null);
+                            setRemoveGif(Boolean(editingProduct));
+                          }}
+                        >
+                          <Icon icon="solar:trash-bin-trash-bold" width={14} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <Icon icon="solar:gallery-bold" width={40} className="mx-auto text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground mt-2">Click to upload GIF (Max 100MB)</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <input id="p-gif" type="file" className="hidden" accept="image/gif" onChange={(e) => { if(e.target.files?.[0]) { setGifFile(e.target.files[0]); setPreviewGif(URL.createObjectURL(e.target.files[0])); setRemoveGif(false); } }} />
+              </div>
+              <div className="space-y-2">
+                <Label>Product Video <span className="text-muted-foreground text-xs font-normal">(Optional)</span></Label>
+                <div className="relative group">
+                  <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50" onClick={() => document.getElementById('p-video')?.click()}>
+                    {previewVideo ? (
+                      <div className="relative">
+                        <div className="h-32 mx-auto flex items-center justify-center">
+                          <video src={previewVideo.startsWith('blob') ? previewVideo : `${import.meta.env.VITE_STORAGE_URL || ''}/storage/${previewVideo}`} controls className="h-32 max-w-full object-contain rounded" />
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setVideoFile(null);
+                            setPreviewVideo(null);
+                            setRemoveVideo(Boolean(editingProduct));
+                          }}
+                        >
+                          <Icon icon="solar:trash-bin-trash-bold" width={14} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <Icon icon="solar:videocamera-record-bold" width={40} className="mx-auto text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground mt-2">Click to upload video (MP4, WebM, OGG, MOV; Max 500MB)</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <input id="p-video" type="file" className="hidden" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo" onChange={(e) => { if(e.target.files?.[0]) { setVideoFile(e.target.files[0]); setPreviewVideo(URL.createObjectURL(e.target.files[0])); setRemoveVideo(false); } }} />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Slug (Custom URL) <span className="text-muted-foreground text-xs font-normal">(Optional)</span></Label>
@@ -913,14 +1027,29 @@ const ProductList = () => {
                 return (
                   <TabsContent key={l.code} value={l.code} className="space-y-4 animate-in fade-in duration-300">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Title ({l.name}) {optionalLabel}</Label><Input value={trans.title} onChange={e => handleTranslationChange(l.code, 'title', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Sub Title 1 ({l.name}) {optionalLabel}</Label><Input value={trans.sub_title1} onChange={e => handleTranslationChange(l.code, 'sub_title1', e.target.value)} /></div>
+                      <div className="space-y-2">
+                        <Label>Title ({l.name}) {optionalLabel}</Label>
+                        <RichTextEditor value={trans.title} onChange={v => handleTranslationChange(l.code, 'title', v)} placeholder={`Enter title in ${l.name}`} minHeight={48} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sub Title 1 ({l.name}) {optionalLabel}</Label>
+                        <RichTextEditor value={trans.sub_title1} onChange={v => handleTranslationChange(l.code, 'sub_title1', v)} placeholder={`Enter sub title 1 in ${l.name}`} minHeight={48} />
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Sub Title 2 ({l.name}) {optionalLabel}</Label><Input value={trans.sub_title2} onChange={e => handleTranslationChange(l.code, 'sub_title2', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Sub Title 3 ({l.name}) {optionalLabel}</Label><Input value={trans.sub_title3} onChange={e => handleTranslationChange(l.code, 'sub_title3', e.target.value)} /></div>
+                      <div className="space-y-2">
+                        <Label>Sub Title 2 ({l.name}) {optionalLabel}</Label>
+                        <RichTextEditor value={trans.sub_title2} onChange={v => handleTranslationChange(l.code, 'sub_title2', v)} placeholder={`Enter sub title 2 in ${l.name}`} minHeight={48} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sub Title 3 ({l.name}) {optionalLabel}</Label>
+                        <RichTextEditor value={trans.sub_title3} onChange={v => handleTranslationChange(l.code, 'sub_title3', v)} placeholder={`Enter sub title 3 in ${l.name}`} minHeight={48} />
+                      </div>
                     </div>
-                    <div className="space-y-2"><Label>Description ({l.name}) {optionalLabel}</Label><Textarea rows={4} value={trans.description} onChange={e => handleTranslationChange(l.code, 'description', e.target.value)} /></div>
+                    <div className="space-y-2">
+                      <Label>Description ({l.name}) {optionalLabel}</Label>
+                      <RichTextEditor value={trans.description} onChange={v => handleTranslationChange(l.code, 'description', v)} placeholder={`Enter description in ${l.name}`} minHeight={120} />
+                    </div>
                   </TabsContent>
                 );
               })}
